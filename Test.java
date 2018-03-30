@@ -42,7 +42,7 @@ public class Test {
 						if (!speechResponse.equals("")) {
 							System.out.println(speechResponse);
 						} else {
-							sper.apiai(line);
+							sper.apiai(line.trim());
 						}
 					} else {
 						System.err.println(response.getStatus().getErrorDetails());

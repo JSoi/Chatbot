@@ -383,29 +383,30 @@ public class Seperate {
 	public static void DecideWhichStore(ArrayList<String> candidates) {
 		ArrayList<String> searchResults = new ArrayList<String>();
 		String simple = "";
+		String searchedStringCommon = "";
 		for (String s : candidates) {
 			simple += s;
 			searchResults.addAll(DecideStoreBySplit(simple));
 		}
-		String avgString = "";
-		HashMap<String, Integer> freqCount = new HashMap<String, Integer>();
-		for (String word : searchResults) {
-			Integer f = freqCount.get(word);
-			freqCount.put(word, f + 1);
-		}
 
-		TreeMap<String, Integer> tm = new TreeMap<String, Integer>(freqCount);
-		Iterator<Integer> iteratorKey = tm.values().iterator(); // 키값 오름차순 정렬(기본)
-
-		while (iteratorKey.hasNext()) {
-			Integer key = iteratorKey.next();
-			System.out.println(key + "," + tm.get(key));
+		Map<String, Integer> stringsCount = new HashMap<>();
+		for(String s: searchResults)
+		{
+		  Integer c = stringsCount.get(s);
+		  if(c == null) c = new Integer(0);
+		  c++;
+		  stringsCount.put(s,c);
 		}
-		/**
-		 * Stream.of(searchResults) .collect(Collectors.groupingBy(s -> s,
-		 * Collectors.counting())) .entrySet() .stream()
-		 * .max(Comparator.comparing(Entry::getValue)) .ifPresent(System.out::println);
-		 */
+		Map.Entry<String,Integer> mostRepeated = null;
+		for(Map.Entry<String, Integer> e: stringsCount.entrySet())
+		{
+		    if(mostRepeated == null || mostRepeated.getValue()<e.getValue())
+		        mostRepeated = e;
+		}
+		if(mostRepeated != null)
+			searchedStringCommon = mostRepeated.getKey();
+	        //System.out.println("Most common string: " + mostRepeated.getKey());
+		System.out.println("가장 많이 검색된 가게명 : " + searchedStringCommon);
 		System.out.println("Testing....." + simple);// 통째로 검색하기
 		if (SearchDB_obj_StoreName_Exact(simple) != null) { // 정확히 일치하는
 

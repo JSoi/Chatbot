@@ -73,8 +73,8 @@ public class Seperate {
 				System.out.print(Predicate + "을(를) 입력해주세요");
 				String Objective = bufferedReader.readLine();
 				sSPO[2] = Objective.trim();
-				// System.out.println("SPO->" + sSPO[0] + "/" + sSPO[1] + "/" + sSPO[2]);
-				teachStoreInfo(sSPO[1], sSPO[2]);
+				System.out.println("SPO->" + sSPO[0] + "/" + sSPO[1] + "/" + sSPO[2]);
+				teachStoreInfo(sSPO[0], sSPO[1], sSPO[2]);
 
 			} else { // 질문하기
 				Question(text.trim());
@@ -259,13 +259,16 @@ public class Seperate {
 			for (int nngcount = 0; nngcount < NNGList.size(); nngcount++) {
 				System.out.println(NNGList.get(nngcount));
 			}
-			// System.out.println("추측 가게 + " + AssumeStore);
-			System.out.println("추측 가게 (DB 뒤짐) + " + SearchDB_obj_StoreName(NNGList.get(0)));
-
 			///////////////// 테스트중
-			DecideWhichStore(NNGList);
-
+			String realstorename = DecideWhichStore(NNGList);
+			System.out.println("추측 가게 (DB 뒤짐) + " + realstorename);
 			System.out.println("Predicate -> " + predicate);
+
+			///////////////// SP가지고 O 추측하기
+
+			String finalResult = SearchDB_SP(realstorename, predicate);
+			System.out.println("##############결과 : " + finalResult + " #################");
+
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -277,7 +280,6 @@ public class Seperate {
 		String deleteTarget_predicate = arr.get(arr.size() - 1);
 		arr.remove(arr.get(arr.size() - 1));
 		return deleteTarget_predicate;
-
 	}
 
 	public static void searchByWord(ArrayList<String> arr) {
@@ -289,13 +291,10 @@ public class Seperate {
 		}
 	}
 
+	/** @param newStore 
+	 * 새로운 상점을 상점명(newStore)으로 가르칠 때 쓰는 메서드
+	 * */
 	public void teachNewStore(String newStore) throws IOException {
-
-		// final String UPDATE_TEMPLATE = "PREFIX store: <http://localhost:3030/store#>"
-		// + "INSERT DATA"
-		// + "{ <http://localhost:3030/store> store:name \"" + newStore.replace(" ", "")
-		// + "\" ." + "} ";
-
 		final String UPDATE_TEMPLATE = "PREFIX store: <http://localhost:3030/store#> "
 				+ " PREFIX rdf: <http://localhost:3030/store#>" + "INSERT DATA"
 				+ "{ <http://localhost:3030/store#%s>    store:name    \"" + newStore.replace(" ", "") + "\" ."
@@ -303,27 +302,34 @@ public class Seperate {
 
 		String id = UUID.randomUUID().toString();
 
-		// createDataset();
-		// System.out.println(String.format("Adding %s", id));
 		UpdateProcessor upp = UpdateExecutionFactory.createRemote(
 				UpdateFactory.create(String.format(UPDATE_TEMPLATE, id)), "http://localhost:3030/store/update");
 		upp.execute();
-		// String URL = "http://localhost:3030/";
-		// String subURL = URLEncoder.encode(newStore, "UTF-8");
-		// System.out.println(URL + subURL);
-		// TDBFactory.createDataset("http://localhost:3030/");
 	}
 
-	public void teachStoreInfo(String predicate, String Objective) {
-		final String UPDATE_TEMPLATE = "PREFIX store: <http://localhost:3030/store#>" + "INSERT DATA"
-				+ "{ <http://localhost:3030/store>     store:site   \"" + Objective + "\" ." + "}   ";
+	public void teachStoreInfo(String subject, String predicate, String Objective) {//
+		// ###################가게명 추가하기
+		String StoreName = subject;
+		final String SEARCH_TEMPLATE = "SELECT ?subject " + "WHERE { " + "?subject "
+				+ " <http://localhost:3030/store#name> " + " \"" + StoreName + "\" . " + "} ";
+		String queryService = "http://localhost:3030/store/sparql";
+		QueryExecution q = QueryExecutionFactory.sparqlService(queryService, SEARCH_TEMPLATE);
+		ResultSet results = q.execSelect();
+		String StoreSub = "";
+		while (results.hasNext()) {
+			QuerySolution soln = results.nextSolution();
+			RDFNode x = soln.get("subject");
+			StoreSub = x.toString();
+		}
 
+		// ########################일단은 site라고 정해놓음
+
+		final String UPDATE_TEMPLATE = "PREFIX store: <http://localhost:3030/store#>" + "INSERT DATA" + "{ <" + StoreSub
+				+ ">     store:site   \"" + Objective + "\" ." + "}   ";
 		String id = UUID.randomUUID().toString();
-		// System.out.println(String.format("Adding %s", id));
 		UpdateProcessor upp = UpdateExecutionFactory.createRemote(
 				UpdateFactory.create(String.format(UPDATE_TEMPLATE, id)), "http://localhost:3030/store/update");
 		upp.execute();
-		// String URL = "http://localhost:3030/";
 	}
 
 	public static Dataset createDataset() throws IOException {
@@ -350,7 +356,6 @@ public class Seperate {
 		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List
 		while (results.hasNext()) {
 			QuerySolution soln = results.nextSolution();
-			// assumes that you have an "?x" in your query
 			RDFNode x = soln.get("object");
 			if (!resultArr.contains(x.toString()))
 				resultArr.add(x.toString()); // object 후보 애들 다 넣어주기. 일단 contains query를 씀 - like 사용 시 수정
@@ -367,11 +372,38 @@ public class Seperate {
 		ResultSet results = q.execSelect();
 		if (results.getRowNumber() == 1) {
 			QuerySolution soln = results.nextSolution();
-			// assumes that you have an "?x" in your query
 			RDFNode x = soln.get("object");
 			ExactStore = x.toString().substring(1, x.toString().length() - 2);
 		}
 		return ExactStore;
+	}
+
+	public static String SearchDB_SP(String subject, String predicate) { // 상점이름과 사이트를 가지고 사이트 리턴
+		String ExactStore = "";
+		String returnString = "";
+		final String SEARCH_TEMPLATE = "SELECT ?subject " + "WHERE { " + "?subject "
+				+ " <http://localhost:3030/store#name> " + " \"" + subject + "\" . " + "} ";
+		String queryService = "http://localhost:3030/store/sparql";
+		QueryExecution q = QueryExecutionFactory.sparqlService(queryService, SEARCH_TEMPLATE);
+		ResultSet results = q.execSelect();
+		while (results.hasNext()) {
+			QuerySolution soln = results.nextSolution();
+			RDFNode x = soln.get("subject");
+			ExactStore = x.toString();
+		}
+
+		final String SEARCH_OBJ_TEMPLATE = "SELECT ?object " + "WHERE { <" + ExactStore + ">"
+				+ " <http://localhost:3030/store#site> " + " ?object . " + "} ";
+		String queryService_o = "http://localhost:3030/store/sparql";
+		QueryExecution q_o = QueryExecutionFactory.sparqlService(queryService_o, SEARCH_OBJ_TEMPLATE);
+		ResultSet results_o = q_o.execSelect();
+		while (results_o.hasNext()) {
+			QuerySolution soln = results_o.nextSolution();
+			RDFNode x = soln.get("object");
+			returnString = x.toString();
+		}
+		return returnString;
+
 	}
 
 	/**
@@ -380,8 +412,9 @@ public class Seperate {
 	 */
 
 	@SuppressWarnings({ "unchecked", "rawtypes", "unlikely-arg-type" }) //// predicate 제거하기 추가해야됨!!!
-	public static void DecideWhichStore(ArrayList<String> candidates) {
+	public static String DecideWhichStore(ArrayList<String> candidates) {
 		ArrayList<String> searchResults = new ArrayList<String>();
+		String returnStoreName = "";
 		String simple = "";
 		String searchedStringCommon = "";
 		for (String s : candidates) {
@@ -390,32 +423,33 @@ public class Seperate {
 		}
 
 		Map<String, Integer> stringsCount = new HashMap<>();
-		for(String s: searchResults)
-		{
-		  Integer c = stringsCount.get(s);
-		  if(c == null) c = new Integer(0);
-		  c++;
-		  stringsCount.put(s,c);
+		for (String s : searchResults) {
+			Integer c = stringsCount.get(s);
+			if (c == null)
+				c = new Integer(0);
+			c++;
+			stringsCount.put(s, c);
 		}
-		Map.Entry<String,Integer> mostRepeated = null;
-		for(Map.Entry<String, Integer> e: stringsCount.entrySet())
-		{
-		    if(mostRepeated == null || mostRepeated.getValue()<e.getValue())
-		        mostRepeated = e;
+		Map.Entry<String, Integer> mostRepeated = null;
+		for (Map.Entry<String, Integer> e : stringsCount.entrySet()) {
+			if (mostRepeated == null || mostRepeated.getValue() < e.getValue())
+				mostRepeated = e;
 		}
-		if(mostRepeated != null)
+		if (mostRepeated != null)
 			searchedStringCommon = mostRepeated.getKey();
-	        //System.out.println("Most common string: " + mostRepeated.getKey());
+		// System.out.println("Most common string: " + mostRepeated.getKey());
 		System.out.println("가장 많이 검색된 가게명 : " + searchedStringCommon);
-		System.out.println("Testing....." + simple);// 통째로 검색하기
-		if (SearchDB_obj_StoreName_Exact(simple) != null) { // 정확히 일치하는
-
+		if (SearchDB_obj_StoreName_Exact(simple) != null) { // 정확히 일치하는 게 있다면
+			returnStoreName = SearchDB_obj_StoreName_Exact(simple);
+		} else {
+			returnStoreName = searchedStringCommon;
 		}
+		return returnStoreName;
 	}
 
 	/** A,B,C,D 등 작게 쪼갠 string을 검색해서 포함 string 을 리스트로 반환 */
 	public static ArrayList<String> DecideStoreBySplit(String input) {
-		final String UPDATE_TEMPLATE = "SELECT ?object " + "WHERE { " + "<http://localhost:3030/store> "
+		final String UPDATE_TEMPLATE = "SELECT ?subject ?object " + "WHERE { " + "?subject"
 				+ " <http://localhost:3030/store#name> " + " ?object filter contains(?object,\"" + input + "\") . "
 				+ "} ";
 		String queryService = "http://localhost:3030/store/sparql";

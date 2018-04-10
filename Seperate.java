@@ -156,6 +156,10 @@ public class Seperate {
 				System.out.println("ASSUMED PREDICATE = " + strLAT);
 				predicate = strLAT;
 			}
+			else {
+				System.out.println("잘 이해하지 못했어요");
+				return;
+			}
 
 			ArrayList<String> NNGList = new ArrayList<String>();
 			for (int MCount = 0; MCount < MORPArray.size(); MCount++) {
@@ -176,12 +180,19 @@ public class Seperate {
 			for (String s : storename_arr)
 				System.out.print(s + " / ");
 			String realstorename = DecideWhichStore(storename_arr);
-
+			if(matchSubject(realstorename).equals("")) { // 해당 가게 정보가 없을 경우
+				System.out.println("<"+realstorename + "> 가게가 존재하지 않습니다. :newstore 명령어를 통해 알려주세요!");
+				return;
+			}
 			String finalResult = SearchDB_SP(realstorename, predicate);
+			if(finalResult.equals("")) { // 해당 가게 정보가 없을 경우
+				System.out.println(realstorename + "의 " + predicate + " 정보가 없습니다. :teach 명령어를 통해 알려주세요!");
+				return;
+			}
 			System.out.println("결과 : " + finalResult);
-
+			Answer(realstorename, predicate, finalResult);
 			///////// @@@@@@@@@@@@@@@@@@@@@@@@@EVALPART
-
+			/**
 			System.out.println("+++++++++EVAL+++++++");
 
 			ArrayList<String> NNGList_e = new ArrayList<String>(); // 명사 리스트
@@ -209,12 +220,16 @@ public class Seperate {
 
 			String finalResult_e = SearchDB_SP(realstorename_e, predicate_e);
 			System.out.println("결과EVAL : " + finalResult_e);
-
+*/
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void Answer(String subject, String predicate, String objective) {
+		System.out.println(subject + "의 " + predicate + "(은)는 " + objective + "입니다.");
 	}
 
 	/**

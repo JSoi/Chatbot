@@ -55,22 +55,38 @@ public class Seperate {
 			BufferedReader bufferedReader = new BufferedReader(streamReader);
 
 			if (text.contains(":newstore")) { // 새로운 상점
-				String newStore = text.replace(text.trim().split(" ")[0], "").trim();
+
+				String newStore = text.replace(":newstore", "").trim();
 				System.out.println(newStore);
 				teachNewStore(newStore);
-			}
+			} else if (text.contains(":teach")) { // 가르치기
+				String storeName = text.replace(":teach", "").trim();
+				while (true) {
+					if (storeName.isEmpty()) {
+						System.out.print("가르칠 음식점이름이 없습니다 음식점이름을 가르쳐주세요 \n> ");
+						storeName = bufferedReader.readLine();
+					}
+					System.out.print(storeName + "에 대한 세부 내용을 입력해주세요 : ");
+					String Subject = storeName;
+					Subject.trim();
+					System.out.print("1.주소 2.영업 시간 3.음식점 종류  \n \t\t     4.메뉴 5.연락처 6.사이트  \n> ");
+					String Predicate = bufferedReader.readLine();
+					Predicate.trim();
+					boolean check = checkInvalidPredicate(Predicate);
+					if (check == true) {
+						System.out.print(Predicate + "을(를) 입력해주세요 \n>");
+						String Objective = bufferedReader.readLine();
+						Objective.trim();
+						teachStoreInfo(Subject, Predicate, Objective);
+					} else {
+						System.out.print(Predicate + "이(가)목록에 존재하지 않습니다 그만 두실거면  yes를 입력해주세요\n> ");
+						String isStop = bufferedReader.readLine();
+						if (isStop.equals("yes"))
+							break;
+						continue;
 
-			else if (text.contains(":teach")) { // 가르치기
-				System.out.print("가르칠 음식점을 입력해주세요 : ");
-				String Subject = text.replace(text.trim().split(" ")[0], "").trim();
-				Subject.trim();
-				System.out.print("1.주소, 2.영업 시간, 3.메뉴, 4.사이트 > ");
-				String Predicate = bufferedReader.readLine();
-				Predicate.trim();
-				System.out.print(Predicate + "을(를) 입력해주세요");
-				String Objective = bufferedReader.readLine();
-				Objective.trim();
-				teachStoreInfo(Subject, Predicate, Objective);
+					}
+				}
 			} else { // 질문하기
 				Question(text.trim());
 			}
@@ -80,6 +96,16 @@ public class Seperate {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private boolean checkInvalidPredicate(String predicate) {
+		PREDICATE[] sort = PREDICATE.values();
+
+		for (int i = 0; i < sort.length; i++) {
+			if (sort[i].getlabel().contains(predicate))
+				return true;
+		}
+		return false;
 	}
 
 	public int position(String input) {
@@ -153,10 +179,9 @@ public class Seperate {
 			if (vLATs.size() != 0) { // 어휘정답유형 존재할 경우 - Predicate로 취급해준다
 				JSONObject strLAT_o = (JSONObject) vLATs.get(0);
 				String strLAT = (String) strLAT_o.get("strLAT");
-				//System.out.println("ASSUMED PREDICATE = " + strLAT);
+				// System.out.println("ASSUMED PREDICATE = " + strLAT);
 				predicate = strLAT;
-			}
-			else {
+			} else {
 				System.out.println("잘 이해하지 못했어요");
 				return;
 			}
@@ -177,57 +202,49 @@ public class Seperate {
 			String storename_array[] = linewithReal.substring(0, linewithReal.lastIndexOf(predicate)).split(" ");
 			ArrayList<String> storename_arr = new ArrayList<String>(Arrays.asList(storename_array));
 
-			//for (String s : storename_arr)
-			//	System.out.print(s + " / ");
+			// for (String s : storename_arr)
+			// System.out.print(s + " / ");
 			String realstorename = DecideWhichStore(storename_arr);
-			if(matchSubject(realstorename).equals("")) { // 해당 가게 정보가 없을 경우
-				System.out.println("<"+realstorename + "> 가게가 존재하지 않습니다. :newstore 명령어를 통해 알려주세요!");
+			if (matchSubject(realstorename).equals("")) { // 해당 가게 정보가 없을 경우
+				System.out.println("<" + realstorename + "> 가게가 존재하지 않습니다. :newstore 명령어를 통해 알려주세요!");
 				return;
 			}
 			String finalResult = SearchDB_SP(realstorename, predicate);
-			if(finalResult.equals("")) { // 해당 가게 정보가 없을 경우
+			if (finalResult.equals("")) { // 해당 가게 정보가 없을 경우
 				System.out.println(realstorename + "의 " + predicate + " 정보가 없습니다. :teach 명령어를 통해 알려주세요!");
 				return;
 			}
-			//System.out.println("결과 : " + finalResult);
+			// System.out.println("결과 : " + finalResult);
 			Answer(realstorename, predicate, finalResult);
 			///////// @@@@@@@@@@@@@@@@@@@@@@@@@EVALPART
 			/**
-			System.out.println("+++++++++EVAL+++++++");
-
-			ArrayList<String> NNGList_e = new ArrayList<String>(); // 명사 리스트
-
-			for (String s : NNGList_e)
-				System.out.print(s + " / ");
-			int real_NNG = 0;
-			for (int MCount = 0; MCount < MORPArray_eval.size(); MCount++) {
-				JSONObject Mtemp = (JSONObject) MORPArray_eval.get(MCount);
-				String type = (String) Mtemp.get("result");
-				String NNGString = (String) Mtemp.get("target");
-				if (type.contains("/NNG") && !type.contains("/V")) { // 진짜 명사인 애들
-					real_NNG++;
-					NNGList_e.add(NNGString);
-				} else {
-					if (real_NNG <= 1) {
-						NNGList_e.add(NNGString);
-					}
-				}
-
-			}
-
-			String predicate_e = NNGList_e.remove(NNGList_e.size() - 1);
-			String realstorename_e = DecideWhichStore(NNGList_e);
-
-			String finalResult_e = SearchDB_SP(realstorename_e, predicate_e);
-			System.out.println("결과EVAL : " + finalResult_e);
-*/
+			 * System.out.println("+++++++++EVAL+++++++");
+			 * 
+			 * ArrayList<String> NNGList_e = new ArrayList<String>(); // 명사 리스트
+			 * 
+			 * for (String s : NNGList_e) System.out.print(s + " / "); int real_NNG = 0; for
+			 * (int MCount = 0; MCount < MORPArray_eval.size(); MCount++) { JSONObject Mtemp
+			 * = (JSONObject) MORPArray_eval.get(MCount); String type = (String)
+			 * Mtemp.get("result"); String NNGString = (String) Mtemp.get("target"); if
+			 * (type.contains("/NNG") && !type.contains("/V")) { // 진짜 명사인 애들 real_NNG++;
+			 * NNGList_e.add(NNGString); } else { if (real_NNG <= 1) {
+			 * NNGList_e.add(NNGString); } }
+			 * 
+			 * }
+			 * 
+			 * String predicate_e = NNGList_e.remove(NNGList_e.size() - 1); String
+			 * realstorename_e = DecideWhichStore(NNGList_e);
+			 * 
+			 * String finalResult_e = SearchDB_SP(realstorename_e, predicate_e);
+			 * System.out.println("결과EVAL : " + finalResult_e);
+			 */
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void Answer(String subject, String predicate, String objective) {
 		System.out.println(subject + "의 " + predicate + "(은)는 " + objective + "입니다.");
 	}
@@ -333,8 +350,8 @@ public class Seperate {
 		}
 		if (mostRepeated != null)
 			searchedStringCommon = mostRepeated.getKey();
-		//System.out.println("가장 많이 검색된 가게명 : " + searchedStringCommon);
-		//System.out.println("가게명 후보 집합 : " + simple);
+		// System.out.println("가장 많이 검색된 가게명 : " + searchedStringCommon);
+		// System.out.println("가게명 후보 집합 : " + simple);
 		if (matchSubject(simple) != null) { // 정확히 일치하는 게 있다면
 			returnStoreName = simple;
 		} else {

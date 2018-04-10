@@ -1,5 +1,5 @@
 
-package ai.api.examples;
+package ai.api.examples.Chatbot;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -71,7 +71,7 @@ public class Test {
 	private static void showHelp(String errorMessage, int exitCode) {
 		if (errorMessage != null && errorMessage.length() > 0) {
 			System.err.println(errorMessage);
-			System.err.println();
+			System.err.println();   
 		}
 
 		System.out.println("Usage: APIKEY");

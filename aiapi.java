@@ -1,4 +1,4 @@
-package ai.api.examples;
+package ai.api.examples.Chatbot;
 
 import java.io.DataOutputStream;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package ai.api.examples;
+package ai.api.examples.Chatbot;
 
 import java.util.Scanner;
 

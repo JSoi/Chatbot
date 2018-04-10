@@ -153,7 +153,7 @@ public class Seperate {
 			if (vLATs.size() != 0) { // 어휘정답유형 존재할 경우 - Predicate로 취급해준다
 				JSONObject strLAT_o = (JSONObject) vLATs.get(0);
 				String strLAT = (String) strLAT_o.get("strLAT");
-				System.out.println("ASSUMED PREDICATE = " + strLAT);
+				//System.out.println("ASSUMED PREDICATE = " + strLAT);
 				predicate = strLAT;
 			}
 			else {
@@ -177,8 +177,8 @@ public class Seperate {
 			String storename_array[] = linewithReal.substring(0, linewithReal.lastIndexOf(predicate)).split(" ");
 			ArrayList<String> storename_arr = new ArrayList<String>(Arrays.asList(storename_array));
 
-			for (String s : storename_arr)
-				System.out.print(s + " / ");
+			//for (String s : storename_arr)
+			//	System.out.print(s + " / ");
 			String realstorename = DecideWhichStore(storename_arr);
 			if(matchSubject(realstorename).equals("")) { // 해당 가게 정보가 없을 경우
 				System.out.println("<"+realstorename + "> 가게가 존재하지 않습니다. :newstore 명령어를 통해 알려주세요!");
@@ -189,7 +189,7 @@ public class Seperate {
 				System.out.println(realstorename + "의 " + predicate + " 정보가 없습니다. :teach 명령어를 통해 알려주세요!");
 				return;
 			}
-			System.out.println("결과 : " + finalResult);
+			//System.out.println("결과 : " + finalResult);
 			Answer(realstorename, predicate, finalResult);
 			///////// @@@@@@@@@@@@@@@@@@@@@@@@@EVALPART
 			/**
@@ -333,8 +333,8 @@ public class Seperate {
 		}
 		if (mostRepeated != null)
 			searchedStringCommon = mostRepeated.getKey();
-		System.out.println("가장 많이 검색된 가게명 : " + searchedStringCommon);
-		System.out.println("가게명 후보 집합 : " + simple);
+		//System.out.println("가장 많이 검색된 가게명 : " + searchedStringCommon);
+		//System.out.println("가게명 후보 집합 : " + simple);
 		if (matchSubject(simple) != null) { // 정확히 일치하는 게 있다면
 			returnStoreName = simple;
 		} else {

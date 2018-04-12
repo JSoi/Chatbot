@@ -54,31 +54,60 @@ public class Seperate {
 			BufferedReader bufferedReader = new BufferedReader(streamReader);
 
 			if (text.contains(":newstore")) { // 새로운 상점
-				String newStore = text.replace(text.trim().split(" ")[0], "").trim();
+
+				String newStore = text.replace(":newstore", "").trim();
 				System.out.println(newStore);
 				teachNewStore(newStore);
-			}
+			} else if (text.contains(":teach")) { // 가르치기
+				String storeName = text.replace(":teach", "").trim();
+				while (true) {
+					if (storeName.isEmpty()) {
+						System.out.print("가르칠 음식점이름이 없습니다 음식점이름을 가르쳐주세요 \n> ");
+						storeName = bufferedReader.readLine();
+					}
+					System.out.print(storeName + "에 대한 세부 내용을 입력해주세요 : ");
+					String Subject = storeName;
+					Subject.trim();
+					System.out.print("1.주소 2.영업 시간 3.음식점 종류  \n \t\t     4.메뉴 5.연락처 6.사이트  \n> ");
+					String Predicate = bufferedReader.readLine();
+					Predicate.trim();
+					boolean check = checkInvalidPredicate(Predicate);
+					if (check == true) {
+						System.out.print(Predicate + "을(를) 입력해주세요 \n>");
+						String Objective = bufferedReader.readLine();
+						Objective.trim();
+						teachStoreInfo(Subject, Predicate, Objective);
+					} else {
+						System.out.print(Predicate + "이(가)목록에 존재하지 않습니다 그만 두실거면  yes를 입력해주세요\n> ");
+						String isStop = bufferedReader.readLine();
+						if (isStop.equals("yes"))
+							break;
+						continue;
 
-			else if (text.contains(":teach")) { // 가르치기
-				System.out.print("가르칠 음식점을 입력해주세요 : ");
-				String Subject = text.replace(text.trim().split(" ")[0], "").trim();
-				Subject.trim();
-				System.out.print("1.주소, 2.영업 시간, 3.메뉴, 4.사이트 > ");
-				String Predicate = bufferedReader.readLine();
-				Predicate.trim();
-				System.out.print(Predicate + "을(를) 입력해주세요");
-				String Objective = bufferedReader.readLine();
-				Objective.trim();
-				teachStoreInfo(Subject, Predicate, Objective);
+					}
+				}
 			} else { // 질문하기
 				Question(text.trim());
 			}
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (org.json.simple.parser.ParseException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private boolean checkInvalidPredicate(String predicate) {
+		// TODO Auto-generated method stub
+		PREDICATE[] sort = PREDICATE.values();
+
+		for (int i = 0; i < sort.length; i++) {
+			if (sort[i].getlabel().contains(predicate)||sort[i].getlabel().equals(predicate))
+				return true;
+			
+		}
+		return false;
 	}
 
 	public int position(String input) {
@@ -152,16 +181,16 @@ public class Seperate {
 			if (vLATs.size() != 0) { // 어휘정답유형 존재할 경우 - Predicate로 취급해준다
 				JSONObject strLAT_o = (JSONObject) vLATs.get(0);
 				String strLAT = (String) strLAT_o.get("strLAT");
-				//System.out.println("ASSUMED PREDICATE = " + strLAT);
+				// System.out.println("ASSUMED PREDICATE = " + strLAT);
 				predicate = strLAT;
 				predicate.trim();
+
 				String predicate_spec = matchPredicate(predicate);
-				if(predicate_spec.equals("")) {
+				if (predicate_spec.equals("")) {
 					System.out.println("매치되는 정보 분류가 없어요 ㅠㅠ");
 					return;
 				}
-			}
-			else {
+			} else {
 				System.out.println("잘 이해하지 못했어요");
 				return;
 			}
@@ -182,19 +211,19 @@ public class Seperate {
 			String storename_array[] = linewithReal.substring(0, linewithReal.lastIndexOf(predicate)).split(" ");
 			ArrayList<String> storename_arr = new ArrayList<String>(Arrays.asList(storename_array));
 
-			//for (String s : storename_arr)
-			//	System.out.print(s + " / ");
+			// for (String s : storename_arr)
+			// System.out.print(s + " / ");
 			String realstorename = DecideWhichStore(storename_arr);
-			if(matchSubject(realstorename).equals("")) { // 해당 가게 정보가 없을 경우
-				System.out.println("\""+realstorename + "\" 가게가 존재하지 않습니다. :newstore 명령어를 통해 알려주세요!");
+			if (matchSubject(realstorename).equals("")) { // 해당 가게 정보가 없을 경우
+				System.out.println("\"" + realstorename + "\" 가게가 존재하지 않습니다. :newstore 명령어를 통해 알려주세요!");
 				return;
 			}
 			String finalResult = SearchDB_SP(realstorename, predicate);
-			if(finalResult.equals("")) { // 해당 가게 정보가 없을 경우
+			if (finalResult.equals("")) { // 해당 가게 정보가 없을 경우
 				System.out.println(realstorename + "의 " + predicate + " 정보가 없습니다. :teach 명령어를 통해 알려주세요!");
 				return;
 			}
-			//System.out.println("결과 : " + finalResult);
+			// System.out.println("결과 : " + finalResult);
 			Answer(realstorename, predicate, finalResult);
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
@@ -202,7 +231,7 @@ public class Seperate {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void Answer(String subject, String predicate, String objective) {
 		System.out.println(subject + "의 " + predicate + "(은)는 " + objective + "입니다.");
 	}
@@ -308,8 +337,8 @@ public class Seperate {
 		}
 		if (mostRepeated != null)
 			searchedStringCommon = mostRepeated.getKey();
-		//System.out.println("가장 많이 검색된 가게명 : " + searchedStringCommon);
-		//System.out.println("가게명 후보 집합 : " + simple);
+		// System.out.println("가장 많이 검색된 가게명 : " + searchedStringCommon);
+		// System.out.println("가게명 후보 집합 : " + simple);
 		if (matchSubject(simple) != null) { // 정확히 일치하는 게 있다면
 			returnStoreName = simple;
 		} else {
@@ -355,56 +384,60 @@ public class Seperate {
 	}
 
 	public boolean PredicateExist(String predicate) {
-		final String SEARCH_TEMPLATE = "PREFIX store: <http://localhost:3030/stores#>  " + 
-				"ASK { store:"+predicate+" ?p ?o .} ";
-		String queryService = "http://localhost:3030/stores/sparql"; 
+		final String SEARCH_TEMPLATE = "PREFIX store: <http://localhost:3030/stores#>  " + "ASK { ?s ?p \"" + predicate
+				+ "\"  .} ";
+		String queryService = "http://localhost:3030/stores/sparql";
 		QueryExecution q = QueryExecutionFactory.sparqlService(queryService, SEARCH_TEMPLATE);
 		boolean results = q.execAsk();
 		q.close();
 		return results;
 	}
-	
+
 	public boolean PredicateAltExist(String alt_predicate) {
-		final String SEARCH_TEMPLATE = "PREFIX store: <http://localhost:3030/stores#>  " + 
-				"ASK { ?s <http://purl.org/dc/terms/alternative> \""+alt_predicate+"\".} ";
-		String queryService = "http://localhost:3030/stores/sparql"; 
+		final String SEARCH_TEMPLATE = "PREFIX store: <http://localhost:3030/stores#>  "
+				+ "ASK { ?s <http://purl.org/dc/terms/alternative> \"" + alt_predicate + "\".} ";
+		String queryService = "http://localhost:3030/stores/sparql";
 		QueryExecution q = QueryExecutionFactory.sparqlService(queryService, SEARCH_TEMPLATE);
 		boolean results = q.execAsk();
 		q.close();
 		return results;
 	}
-	
-	public String searchAltPredicate(String alt_predicate) { 
-		String predicateResult = "";
-		final String SEARCH_PREDICATE_FORM = "SELECT ?pre " + "WHERE { " + "?pre "
-				+ " <http://purl.org/dc/terms/alternative> " + " \"" + alt_predicate + "\" . " + "} ";
-		String queryService = "http://localhost:3030/stores/query"; // 뼈대에서 쿼리
-		QueryExecution q = QueryExecutionFactory.sparqlService(queryService, SEARCH_PREDICATE_FORM);
-		ResultSet results = q.execSelect();
-		while (results.hasNext()) {
-			QuerySolution soln = results.nextSolution();
-			RDFNode x = soln.get("pre");
-			predicateResult = x.toString();
-		}
-		q.close();
-		return "<"+predicateResult+">";
-	}
-	
+
 	/**
 	 * rdf 구조에 맞춰 matchPredicate 수정 또는 삭제하기
 	 */
 	public String matchPredicate(String p_word) { // 단어(ex.태그, 분위기, 영업 시간)을 input으로 받아 기존의 틀로 리턴받음
 		// 수정할사항2) - <질문할 때> predicate 기반으로 틀을 리턴받고, 이 틀을 기반으로 질문해서 결과 받기
 		String predicateResult = "";
-		if(PredicateExist(p_word)) {
-			predicateResult = "<http://localhost:3030/stores#"+ p_word +">";
-		}
-		else if(PredicateAltExist(p_word)){
-			predicateResult = searchAltPredicate(p_word);
-		}
-		else {
+		if (PredicateExist(p_word)) {
+			// predicateResult = "<http://localhost:3030/stores#"+ p_word +">";
+			predicateResult = searchP(p_word);
+		} else {
 			return "";
 		}
 		return predicateResult;
+	}
+
+	public String searchP(String p_word) {
+		String predicateResult = "";
+		String subjectResult = "";
+		final String SEARCH_PREDICATE_FORM = "SELECT ?sub ?pre " + "WHERE { " + "?sub " + " ?pre " + " \"" + p_word
+				+ "\" . " + "} ";
+		String queryService = "http://localhost:3030/stores/query"; // 뼈대에서 쿼리
+		QueryExecution q = QueryExecutionFactory.sparqlService(queryService, SEARCH_PREDICATE_FORM);
+		ResultSet results = q.execSelect();
+		ArrayList<String> rdfnode_sub = new ArrayList<String>();
+		ArrayList<String> rdfnode_pre = new ArrayList<String>();
+		while (results.hasNext()) {
+			QuerySolution soln = results.nextSolution();
+			RDFNode x = soln.get("sub");
+			RDFNode y = soln.get("pre");
+			subjectResult = x.toString();
+			predicateResult = y.toString();
+			subjectResult = "<" + subjectResult + ">";
+			predicateResult = "<" + predicateResult + ">";
+		}
+		q.close();
+		return subjectResult;
 	}
 }

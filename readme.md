@@ -1,7 +1,7 @@
 지식 베이스를 활용한 음식점 챗봇
 ================
 > 일반 인사(SmallTalk)
->> *DialogFlow SmallTalk 활용
+> *DialogFlow SmallTalk 활용
 
 > 음식점 질문
 *형태소 분석기, 질문 분석기 활용(ETRI 인공지능 Open API 서비스)

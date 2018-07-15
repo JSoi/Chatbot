@@ -3,7 +3,6 @@ package Test.test.URIChatbot;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,7 +103,7 @@ public class Controller {
 				query.teachStoreInfo(newStore.getSubject(), newStore.getPredicate(), newStore.getObject());
 				FLAG = "teaching Predicates";
 				return JsnRespond.MakeJsonObject("등록되었습니다");
-				
+ 				
 			}
 			else if(line.equals("아니요")) {
 				FLAG = "teaching Predicates "+newStore.getPredicate();

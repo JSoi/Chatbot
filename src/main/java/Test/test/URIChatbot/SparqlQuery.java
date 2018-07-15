@@ -59,10 +59,9 @@ public class SparqlQuery {
 			 catch (IOException e) {
 				logger.info(e.getMessage());
 			}
-			
 			return JsnRespond.MakeJsonObject("업데이트 되었습니다");
 		} else {
-			return JsnRespond.MakeJsonObject(newStore + "가 등록되었습니다. :teach를 통해서 가게 정보를 입력해주세요!");
+			return JsnRespond.MakeJsonObject(newStore + "가 이미 등록되어 있습니다. :teach를 통해서 가게 정보를 입력해주세요!");
 			//System.out.println("이미 등록 된 상점입니다. :teach 명령어를 통해 상점에 대한 정보를 입력해주세요 ");
 		}
 		
@@ -203,12 +202,9 @@ public class SparqlQuery {
 	}
 
 	public String matchSubject(String storename) {
-		logger.info("getText:newstore matchSubject1");
 		String StoreSub = "";
 		final String SEARCH_TEMPLATE = "SELECT ?subject " + "WHERE { " + "?subject "
 				+ " <http://13.209.53.196:3030/stores#이름> " + " \"" + storename + "\" . " + "} ";
-		String queryService = "http://13.209.53.196:3030/stores/query"; // 인스턴스 목록에서 search
-		logger.info("queryExecutionbefore : " + SEARCH_TEMPLATE);
 
 		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
 				"http://13.209.53.196:3030/stores",
@@ -218,7 +214,6 @@ public class SparqlQuery {
 		try {
 			proc = Runtime.getRuntime().exec(args);
 			logger.info("precss info:" + proc.toString());
-			logger.info("errorStram:" + proc.getErrorStream());
 			/** StringBuilder 사용하기 */
 			StringBuilder sb = new StringBuilder();
 			String line;
@@ -237,7 +232,7 @@ public class SparqlQuery {
 			JSONArray realArray = array.getJSONArray("bindings");
 			logger.info("realArray : "+realArray);
 			
-			if(realArray.get(0)!=null)
+			if(realArray.toList().size()!=0)
 				StoreSub = realArray.get(0).toString();
 
 			logger.info("StoreSub : " + StoreSub);

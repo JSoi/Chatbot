@@ -60,17 +60,16 @@ public class Controller {
 			newStore.setPredicate(line);
 			return JsnRespond.MakeJsonObject(line + "이 등록되었습니다");
 		}
-		if (line.contains(":newstore")) {// 새로운 상점 만들기
+		else if (line.contains(":newstore")) {// 새로운 상점 만들기
 			String newStore = line.replace(":newstore", "").trim();
 			logger.info("getTest:beforenewstore");
 
-			query.teachNewStore(newStore);
-			logger.info("getText:afternewstore");
+			
 
 			FLAG = "default";
-			return JsnRespond.MakeJsonObject(newStore + "가 등록되었습니다. :teach를 통해서 가게 정보를 입력해주세요!");
+			return query.teachNewStore(newStore);
 		}
-		if (line.contains(":teach")) {// 가르치기
+		else if (line.contains(":teach")) {// 가르치기
 			String storeName = line.replace(":teach", "").trim();
 			if (storeName.isEmpty()) {
 				return JsnRespond.MakeJsonObject("가르칠 음식점이름이 없습니다. 음식점 이름을 가르쳐주세요");

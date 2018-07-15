@@ -73,7 +73,7 @@ public class Controller {
 			}
 			newStore = new TripleStore();
 			newStore.setSubject(storeName);
-			return JsnRespond.MakeJsonObject(storeName + "에대한 세부내용을 입력해주세요");
+			return JsnRespond.MakeJsonObject(storeName + "에 가르칠 내용을 선택해주세요", makebuttonsArr());
 		}
 
 		else {
@@ -108,6 +108,19 @@ public class Controller {
 		return JsnRespond.MakeJsonObject(buttons);
 	}
 
+	private ArrayList<String> makebuttonsArr() {
+		/* TODO 버튼이 한개씩 없어짐 */
+		PREDICATE[] sortOfFood = PREDICATE.values();
+		ArrayList<String> buttons = new ArrayList<>();
+		for (int i = 0; i < sortOfFood.length; i++) {
+			buttons.add(sortOfFood[i].getlabel());
+		}
+		buttons.add("그만하기");
+
+		FLAG = "teaching Predicates";
+		return buttons;
+	}
+	
 	private boolean IsYes(String line) {
 		switch (line) {
 		case "응":

@@ -30,41 +30,42 @@ public class SparqlQuery {
 	 * @param newStore
 	 *            새로운 상점을 상점명(newStore)으로 가르칠 때 쓰는 메서드
 	 */
-	public String teachNewStore(String newStore){
+	public String teachNewStore(String newStore) {
 		logger.info("getText:newstore");
 		String id = UUID.randomUUID().toString();
 
 		final String UPDATE_TEMPLATE = "PREFIX stores: <http://13.209.53.196:3030/stores#> " + "INSERT DATA"
-				+ "{ <http://13.209.53.196:3030/stores#"+id+">    stores:이름    \"" + newStore.replace(" ", "") + "\" ." + "}   ";
+				+ "{ <http://13.209.53.196:3030/stores#" + id + ">    stores:이름    \"" + newStore.replace(" ", "")
+				+ "\" ." + "}   ";
 
 		if (matchSubject(newStore).equals("")) {
-			
-			String[] args = new String[] {"/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-update", "--service", "http://13.209.53.196:3030/stores", UPDATE_TEMPLATE};
+
+			String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-update", "--service",
+					"http://13.209.53.196:3030/stores", UPDATE_TEMPLATE };
 			Process proc = null;
 
 			try {
 				proc = Runtime.getRuntime().exec(args);
-			 
-			/**StringBuilder 사용하기*/
-			StringBuilder sb = new StringBuilder();
-			String line;
-			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-			
-				while((line = reader.readLine()) != null) {
-					logger.info("update : "+line);
+
+				/** StringBuilder 사용하기 */
+				StringBuilder sb = new StringBuilder();
+				String line;
+				BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+				while ((line = reader.readLine()) != null) {
+					logger.info("update : " + line);
 					sb.append(line);
 				}
 
-			}
-			 catch (IOException e) {
+			} catch (IOException e) {
 				logger.info(e.getMessage());
 			}
 			return JsnRespond.MakeJsonObject("업데이트 되었습니다");
 		} else {
 			return JsnRespond.MakeJsonObject(newStore + "가 이미 등록되어 있습니다. :teach를 통해서 가게 정보를 입력해주세요!");
-			//System.out.println("이미 등록 된 상점입니다. :teach 명령어를 통해 상점에 대한 정보를 입력해주세요 ");
+			// System.out.println("이미 등록 된 상점입니다. :teach 명령어를 통해 상점에 대한 정보를 입력해주세요 ");
 		}
-		
+
 	}
 
 	public void teachStoreInfo(String subject, String predicate, String Objective) {// objective is RAW!!
@@ -74,17 +75,26 @@ public class SparqlQuery {
 		// String StorePre = matchPredicate(predicate);
 		final String UPDATE_TEMPLATE = "PREFIX stores: <http://13.209.53.196:3030/stores#>" + "INSERT DATA" + "{ <"
 				+ StoreSub + ">    stores:" + predicate + "   \"" + Objective + "\" ." + "}   ";
-		String id = UUID.randomUUID().toString();
 		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-update", "--service",
 				"http://13.209.53.196:3030/stores", UPDATE_TEMPLATE };
+		Process proc = null;
 
-		// UpdateProcessor upp = UpdateExecutionFactory.createRemote(
-		// UpdateFactory.create(String.format(UPDATE_TEMPLATE, id)),
-		// "http://13.209.53.196:3030/stores/update");
-		// upp.execute();
+		try {
+			proc = Runtime.getRuntime().exec(args);
+			/** StringBuilder 사용하기 */
+			StringBuilder sb = new StringBuilder();
+			String line;
+			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			while ((line = reader.readLine()) != null) {
+				logger.info("update : " + line);
+				sb.append(line);
+			}
+		} catch (IOException e) {
+			logger.info(e.getMessage());
+		}
 	}
-	
-	//추가 - 더 수정하기
+
+	// 추가 - 더 수정하기
 	public String teachStoreInfo_TagCase(String tagLine, String sparql_subject) {
 		tagLine.trim();
 		tagLine = tagLine.replaceAll(" ", "");
@@ -127,15 +137,33 @@ public class SparqlQuery {
 		ExactPre = matchPredicate(predicate);
 		final String SEARCH_OBJ_TEMPLATE = "SELECT ?object " + "WHERE { <" + ExactStore + "> " + ExactPre
 				+ "  ?object . " + "} ";
-		String queryService_o = "http://13.209.53.196:3030/stores/sparql";
-		QueryExecution q_o = QueryExecutionFactory.sparqlService(queryService_o, SEARCH_OBJ_TEMPLATE);
-		ResultSet results_o = q_o.execSelect();
-		while (results_o.hasNext()) {
-			QuerySolution soln = results_o.nextSolution();
-			RDFNode x = soln.get("object");
-			returnString = x.toString();
+		//String queryService_o = "http://13.209.53.196:3030/stores/sparql";
+		//QueryExecution q_o = QueryExecutionFactory.sparqlService(queryService_o, SEARCH_OBJ_TEMPLATE);
+		//ResultSet results_o = q_o.execSelect();
+		//while (results_o.hasNext()) {
+		//	QuerySolution soln = results_o.nextSolution();
+		//	RDFNode x = soln.get("object");
+		//	returnString = x.toString();
+		//}
+		//q_o.close();
+		
+		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
+				"http://13.209.53.196:3030/stores", SEARCH_OBJ_TEMPLATE };
+		Process proc = null;
+		try {
+			proc = Runtime.getRuntime().exec(args);
+			/** StringBuilder 사용하기 */
+			StringBuilder sb = new StringBuilder();
+			String line;
+			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			while ((line = reader.readLine()) != null) {
+				logger.info("query : " + line);
+				sb.append(line);
+			}
+		} catch (IOException e) {
+			logger.info(e.getMessage());
 		}
-		q_o.close();
+		
 		return returnString;
 
 	}
@@ -203,8 +231,8 @@ public class SparqlQuery {
 
 	public String matchSubject(String storename) {
 		String StoreSub = "";
-		final String SEARCH_TEMPLATE = "SELECT ?subject " + "WHERE { " + "?subject "
-				+ " <http://13.209.53.196:3030/stores#이름> " + " \"" + storename + "\" . " + "} ";
+		//final String SEARCH_TEMPLATE = "SELECT ?subject " + "WHERE { " + "?subject "
+		//		+ " <http://13.209.53.196:3030/stores#이름> " + " \"" + storename + "\" . " + "} ";
 
 		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
 				"http://13.209.53.196:3030/stores",
@@ -223,16 +251,16 @@ public class SparqlQuery {
 				logger.info(line);
 				sb.append(line);
 			}
-			logger.info("sb : "+sb.toString());
+			logger.info("sb : " + sb.toString());
 
 			JSONObject json = new JSONObject(sb.toString());
-			logger.info("json : "+json);
+			logger.info("json : " + json);
 			JSONObject array = (JSONObject) json.get("results");
-			logger.info("array : "+array);
+			logger.info("array : " + array);
 			JSONArray realArray = array.getJSONArray("bindings");
-			logger.info("realArray : "+realArray);
-			
-			if(realArray.toList().size()!=0)
+			logger.info("realArray : " + realArray);
+
+			if (realArray.toList().size() != 0)
 				StoreSub = realArray.get(0).toString();
 
 			logger.info("StoreSub : " + StoreSub);
@@ -241,10 +269,9 @@ public class SparqlQuery {
 			logger.info(e.getMessage());
 		}
 
-		
 		return StoreSub;
 	}
-	
+
 	public String searchStoreName(String storename) {
 		final String SEARCH_TEMPLATE = "SELECT ?subject " + "WHERE { " + "?subject "
 				+ " <http://13.209.53.196:3030/stores#이름> " + " \"" + storename + "\" . " + "} ";
@@ -260,7 +287,7 @@ public class SparqlQuery {
 		q.close();
 		return StoreSub;
 	}
-	
+
 	public boolean PredicateExist(String predicate) {
 		final String SEARCH_TEMPLATE = "PREFIX stores: <http://13.209.53.196:3030/stores#>  " + "ASK { ?s ?p \""
 				+ predicate + "\"  .} ";

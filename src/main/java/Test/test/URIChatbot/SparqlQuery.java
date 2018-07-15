@@ -251,7 +251,25 @@ public class SparqlQuery {
 				sb.append(line);
 			}
 			logger.info("sb : " + sb.toString());
-				
+			/**
+			 * TODO 소이야 여기일단 고쳐야할부분이야!!
+			 * 이거 json 에서 
+			 * {
+INFO : Test.test.URIChatbot.SparqlQuery -   "head": {
+INFO : Test.test.URIChatbot.SparqlQuery -     "vars": [ "subject" ]
+INFO : Test.test.URIChatbot.SparqlQuery -   } ,
+INFO : Test.test.URIChatbot.SparqlQuery -   "results": {
+INFO : Test.test.URIChatbot.SparqlQuery -     "bindings": [
+INFO : Test.test.URIChatbot.SparqlQuery -       {
+INFO : Test.test.URIChatbot.SparqlQuery -         "subject": { "type": "uri" , "value": "http://13.209.53.196:3030/stores#d51df6c0-cd59-4666-96ff-0b23c3742764" }
+INFO : Test.test.URIChatbot.SparqlQuery -       }
+INFO : Test.test.URIChatbot.SparqlQuery -     ]
+INFO : Test.test.URIChatbot.SparqlQuery -   }
+INFO : Test.test.URIChatbot.SparqlQuery - }
+				이렇게 나오는데 여기서 value를 빼야해 
+				 너가 보기전에 고치긴 할건데 혹시 너 git에 안고쳐져있으면 놀라지말라고!!
+				 
+			 * */
 			/*JSONParser parser = new JSONParser();
 			Object obj = parser.parse(sb.toString());
 			JSONObject parsingJson = (JSONObject)obj;

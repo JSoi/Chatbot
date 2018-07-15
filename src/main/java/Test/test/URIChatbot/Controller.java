@@ -49,8 +49,10 @@ public class Controller {
 			if(line.equals("가르치기")||FLAG.contains("teaching")) {
 				return teachingProcess(line);
 			}
-			else
+			else if(line.equals("질문하기"))
 				return analysis.analyze(line);
+			else
+				return JsnRespond.MakeJsonObject(line);
 
 		}
 	}
@@ -163,7 +165,7 @@ public class Controller {
 		case "ㅇㅇ":
 		case "yes":
 		case "y":
-		case "어":
+		case "어": 
 		case "예":
 			return true;
 		default:

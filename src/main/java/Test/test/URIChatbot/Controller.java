@@ -51,11 +51,7 @@ public class Controller {
 			}
 			else
 				return analysis.analyze(line);
-//			if (line.contains(":newstore") || line.contains(":teach") || FLAG.contains("teaching")) {
-//				FLAG = "teaching Process";
-//				return teachingProcess(line);
-//			} else
-//				return analysis.analyze(line);
+
 		}
 	}
 

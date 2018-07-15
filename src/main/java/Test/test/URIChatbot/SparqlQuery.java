@@ -252,7 +252,7 @@ public class SparqlQuery {
 			}
 			logger.info("sb : " + sb.toString());
 				
-			JSONParser parser = new JSONParser();
+			/*JSONParser parser = new JSONParser();
 			Object obj = parser.parse(sb.toString());
 			JSONObject parsingJson = (JSONObject)obj;
 			String getText = (String) parsingJson.get("results");
@@ -275,7 +275,7 @@ public class SparqlQuery {
 				StoreSub = getText;
 				logger.info(getText);
 
-			}
+			}*/
 			
 			
 			/*JSONObject json = new JSONObject(sb.toString());
@@ -288,13 +288,10 @@ public class SparqlQuery {
 			if (realArray.toList().size() != 0)
 				StoreSub = realArray.toString();*/
 			
-			logger.info("StoreSub : " + StoreSub);
+			logger.info("StoreSub : " + sb);
 
 		} catch (IOException e) {
 			logger.info(e.getMessage());
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 
 		return StoreSub;

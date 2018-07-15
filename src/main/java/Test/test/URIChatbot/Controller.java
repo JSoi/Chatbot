@@ -109,7 +109,7 @@ public class Controller {
 			else if(line.equals("아니요")) {
 				FLAG = "teaching Predicates "+newStore.getPredicate();
 				return  JsnRespond.MakeJsonObject("음식점 "+newStore.getSubject()+"의 "+newStore.getPredicate()+"정보를 다시 입력해주세요");
-			}
+		}
 			else {
 				return JsnRespond.MakeJsonObject("예 아니요로 답해주세요");
 			}

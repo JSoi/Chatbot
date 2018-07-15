@@ -2,6 +2,9 @@ package Test.test.URIChatbot;
 
 import java.util.ArrayList;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.GsonBuilder;
@@ -13,49 +16,30 @@ public class MakeResponse {
 	public MakeResponse() {
 	}
 
+	@SuppressWarnings("unchecked")
 	public String MakeJsonObject(String msg, ArrayList<String> Buttons) {
-		JsonObject TotalJson = new JsonObject();
-		JsonObject keyboard = new JsonObject();
-		JsonObject messageButton = new JsonObject();
-		JsonObject text = new JsonObject();
-		// JsonObject buttonJS = new JsonObject();
-		JsonArray jsArray = new JsonArray();
+		JSONObject res = new JSONObject();
+		JSONObject keyboard = new JSONObject();
+		JSONObject text = new JSONObject();
+		//JSONObject buttonJS = new JSONObject();
+		JSONArray jsArray = new JSONArray();
+		
 		Gson gson = new GsonBuilder().create();
 
-		text.addProperty("text", msg);
-		TotalJson.add("message", text);
-
-		TotalJson.add("message_button", messageButton);
-
-		keyboard.addProperty("type", "buttons");
-		for (int i = 0; i < Buttons.size(); i++) {
-			jsArray.add(Buttons.get(i));
-		}
+		text.put("text", msg);
+		res.put("message", text);
+		jsArray.addAll(Buttons);
 		JsonArray buttonarr = gson.toJsonTree(jsArray).getAsJsonArray();
-		keyboard.add("buttons", buttonarr);
-		TotalJson.add("keyboard", keyboard);
+		keyboard.put("type", "buttons");
 
-		return TotalJson.toString();
+		keyboard.put("buttons", buttonarr);
+		res.put("keyboard", keyboard);
+		return res.toJSONString();
 
+	
 	}
 
-	public String MakeJsonObject(ArrayList<String> Buttons) {
-		JsonObject TotalJson = new JsonObject();
-		JsonObject keyboard = new JsonObject();
-		JsonArray jsArray = new JsonArray();
-		Gson gson = new GsonBuilder().create();
-
-		
-		keyboard.addProperty("type", "buttons");
-		for (int i = 0; i < Buttons.size(); i++) {
-			jsArray.add(Buttons.get(i));
-		}
-		keyboard.add("buttons", jsArray);
-		
-		TotalJson.add("keyboard", keyboard);
-		return TotalJson.toString();
-
-	}
+	
 
 	public String MakeJsonObject(String input) {
 		JsonObject res = new JsonObject();

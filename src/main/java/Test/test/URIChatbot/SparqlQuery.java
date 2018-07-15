@@ -16,7 +16,6 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.RDFNode;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
@@ -60,9 +59,9 @@ public class SparqlQuery {
 			} catch (IOException e) {
 				logger.info(e.getMessage());
 			}
-			return JsnRespond.MakeJsonObject("업데이트 되었습니다");
+			return newStore;
 		} else {
-			return JsnRespond.MakeJsonObject(newStore + "가 이미 등록되어 있습니다. :teach를 통해서 가게 정보를 입력해주세요!");
+			return "registered "+newStore;
 			// System.out.println("이미 등록 된 상점입니다. :teach 명령어를 통해 상점에 대한 정보를 입력해주세요 ");
 		}
 
@@ -252,8 +251,34 @@ public class SparqlQuery {
 				sb.append(line);
 			}
 			logger.info("sb : " + sb.toString());
+				
+			JSONParser parser = new JSONParser();
+			Object obj = parser.parse(sb.toString());
+			JSONObject parsingJson = (JSONObject)obj;
+			String getText = (String) parsingJson.get("results");
+			logger.info(getText);
 
-			JSONObject json = new JSONObject(sb.toString());
+			obj = parser.parse(getText);
+			parsingJson = (JSONObject)obj;
+			JSONArray getarryText = (JSONArray)parsingJson.get("bindings");
+			logger.info(getarryText.toString());
+
+			if(!getarryText.isNull(0)) {
+				obj = parser.parse(getarryText.getString(0));
+				parsingJson = (JSONObject)obj;
+				getText = (String)parsingJson.get("subject");
+				logger.info(getText);
+
+				obj = parser.parse(getText);
+				parsingJson = (JSONObject)obj;
+				getText = (String)parsingJson.get("value");
+				StoreSub = getText;
+				logger.info(getText);
+
+			}
+			
+			
+			/*JSONObject json = new JSONObject(sb.toString());
 			logger.info("json : " + json);
 			JSONObject array = (JSONObject) json.get("results");
 			logger.info("array : " + array);
@@ -261,12 +286,15 @@ public class SparqlQuery {
 			logger.info("realArray : " + realArray);
 
 			if (realArray.toList().size() != 0)
-				StoreSub = realArray.get(0).toString();
-
+				StoreSub = realArray.toString();*/
+			
 			logger.info("StoreSub : " + StoreSub);
 
 		} catch (IOException e) {
 			logger.info(e.getMessage());
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		return StoreSub;

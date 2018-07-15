@@ -1,7 +1,8 @@
 package Test.test.URIChatbot;
 
 import java.io.IOException;
-
+import java.util.ArrayList;
+import java.util.List;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -73,10 +74,18 @@ public class HomeController {
 		System.out.println("keyboard");
 		//DialogFlow df = new DialogFlow();
 		//String s = df.dialog("안녕");
-		JSONObject obj = new JSONObject();
-		obj.put("type", "text");
-
-		return obj.toJSONString();
+		JSONObject totalJson = new JSONObject();
+		JSONObject message = new JSONObject();
+		message.put("text", "가게를 등록하시길 원하면 가르치기를, 정보를 얻기를 원하면 질문하기를 눌러주세요");
+		totalJson.put("message", message);
+		JSONObject keyboard = new JSONObject();
+		keyboard.put("type", "buttons");
+		List<String>  list  = new ArrayList<>();
+		list.add("가르치기");
+		list.add("질문하기");
+		keyboard.put("buttons", list);
+		totalJson.put("keyboard", keyboard);
+		return totalJson.toJSONString();
 	}
 
 	@RequestMapping(value = "/message", method = {RequestMethod.GET,RequestMethod.POST}

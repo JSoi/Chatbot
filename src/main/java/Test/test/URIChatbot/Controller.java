@@ -100,7 +100,7 @@ public class Controller {
 			return JsnRespond.MakeJsonObject("음식점 "+newStore.getSubject()+"의 "+newStore.getPredicate()+"은 "+line+"입니다. 맞으면 예, 틀리면 아니요를 눌러주세요" );
 		}
 		if(FLAG.equals("teaching yes or no")) {
-			if(line.equals("예")) {
+			if(IsYes(line)) {
 				query.teachStoreInfo(newStore.getSubject(), newStore.getPredicate(), newStore.getObject());
 				FLAG = "teaching Predicates";
 				return JsnRespond.MakeJsonObject("등록되었습니다");

@@ -2,10 +2,8 @@ package Test.test.URIChatbot;
 
 import java.util.ArrayList;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 
@@ -15,37 +13,58 @@ public class MakeResponse {
 	public MakeResponse() {
 	}
 
-	@SuppressWarnings("unchecked")
 	public String MakeJsonObject(String msg, ArrayList<String> Buttons) {
-		JSONObject res = new JSONObject();
-		JSONObject keyboard = new JSONObject();
-		JSONObject text = new JSONObject();
-		//JSONObject buttonJS = new JSONObject();
-		JSONArray jsArray = new JSONArray();
-		
+		JsonObject TotalJson = new JsonObject();
+		JsonObject keyboard = new JsonObject();
+		JsonObject messageButton = new JsonObject();
+		JsonObject text = new JsonObject();
+		// JsonObject buttonJS = new JsonObject();
+		JsonArray jsArray = new JsonArray();
 		Gson gson = new GsonBuilder().create();
 
-		text.put("text", msg);
-		res.put("message", text);
-		jsArray.addAll(Buttons);
-		JsonArray buttonarr = gson.toJsonTree(jsArray).getAsJsonArray();
-		keyboard.put("type", "buttons");
+		text.addProperty("text", msg);
+		TotalJson.add("message", text);
 
-		keyboard.put("buttons", buttonarr);
-		res.put("keyboard", keyboard);
-		return res.toJSONString();
+		TotalJson.add("message_button", messageButton);
+
+		keyboard.addProperty("type", "buttons");
+		for (int i = 0; i < Buttons.size(); i++) {
+			jsArray.add(Buttons.get(i));
+		}
+		JsonArray buttonarr = gson.toJsonTree(jsArray).getAsJsonArray();
+		keyboard.add("buttons", buttonarr);
+		TotalJson.add("keyboard", keyboard);
+
+		return TotalJson.toString();
 
 	}
 
-	@SuppressWarnings("unchecked")
+	public String MakeJsonObject(ArrayList<String> Buttons) {
+		JsonObject TotalJson = new JsonObject();
+		JsonObject keyboard = new JsonObject();
+		JsonArray jsArray = new JsonArray();
+		Gson gson = new GsonBuilder().create();
+
+		
+		keyboard.addProperty("type", "buttons");
+		for (int i = 0; i < Buttons.size(); i++) {
+			jsArray.add(Buttons.get(i));
+		}
+		keyboard.add("buttons", jsArray);
+		
+		TotalJson.add("keyboard", keyboard);
+		return TotalJson.toString();
+
+	}
+
 	public String MakeJsonObject(String input) {
-		JSONObject res = new JSONObject();
-		JSONObject text = new JSONObject();
+		JsonObject res = new JsonObject();
+		JsonObject text = new JsonObject();
 
-		text.put("text", input);
-		res.put("message", text);
+		text.addProperty("text", input);
+		res.add("message", text);
 
-		return res.toJSONString();
+		return res.toString();
 
 	}
 

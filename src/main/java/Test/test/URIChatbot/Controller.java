@@ -63,9 +63,6 @@ public class Controller {
 		else if (line.contains(":newstore")) {// 새로운 상점 만들기
 			String newStore = line.replace(":newstore", "").trim();
 			logger.info("getTest:beforenewstore");
-
-			
-
 			FLAG = "default";
 			return query.teachNewStore(newStore);
 		}
@@ -108,7 +105,7 @@ public class Controller {
 		buttons.add("그만하기");
 
 		FLAG = "teaching Predicates";
-		return JsnRespond.MakeJsonObject("버튼을 골라주세요", buttons);
+		return JsnRespond.MakeJsonObject(buttons);
 	}
 
 	private boolean IsYes(String line) {

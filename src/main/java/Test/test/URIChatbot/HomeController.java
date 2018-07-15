@@ -70,11 +70,15 @@ public class HomeController {
 	@SuppressWarnings("unchecked")
 	@RequestMapping(value = "/keyboard", method = RequestMethod.GET,produces="application/json;charset=UTF-8")
 	public String keyboard() {
-		
-		System.out.println("keyboard");
+		JSONObject example = new JSONObject();
+		example.put("user_key", "encrypterUserKey");
+		example.put("type", "text");
+		example.put("user_key", "encrypterUserKey");
+		//message(example);
+		return example.toJSONString();
 		//DialogFlow df = new DialogFlow();
 		//String s = df.dialog("안녕");
-		JSONObject totalJson = new JSONObject();
+		/*JSONObject totalJson = new JSONObject();
 		JSONObject message = new JSONObject();
 		message.put("text", "가게를 등록하시길 원하면 가르치기를, 정보를 얻기를 원하면 질문하기를 눌러주세요");
 		totalJson.put("message", message);
@@ -84,8 +88,8 @@ public class HomeController {
 		list.add("가르치기");
 		list.add("질문하기");
 		keyboard.put("buttons", list);
-		totalJson.put("keyboard", keyboard);
-		return totalJson.toJSONString();
+		totalJson.put("keyboard", keyboard);*/
+		//return totalJson.toJSONString();
 	}
 
 	@RequestMapping(value = "/message", method = {RequestMethod.GET,RequestMethod.POST}

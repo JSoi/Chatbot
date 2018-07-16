@@ -251,6 +251,20 @@ public class SparqlQuery {
 				sb.append(line);
 			}
 			logger.info("sb : " + sb.toString());
+			JSONParser parser = new JSONParser();
+			String sbToString = sb.toString();
+			Object obj = null;
+			try {
+				obj = parser.parse(sbToString);
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			JSONObject jsonObj = (JSONObject) obj;
+			JSONObject results = (JSONObject) jsonObj.get("results");
+			JSONArray jArray = (JSONArray) results.get("bindings");
+			StoreSub = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
+			// {  "head": {    "vars": [ "subject" ]  } ,  "results": {    "bindings": [      {        "subject": { "type": "uri" , "value": "http://13.209.53.196:3030/stores#d51df6c0-cd59-4666-96ff-0b23c3742764" }      } ,      {        "subject": { "type": "uri" , "value": "http://13.209.53.196:3030/stores#06b6460e-3c09-4c44-bbfc-eed8134acb46" }      }    ]  }}
 			/**
 			 * TODO 소이야 여기일단 고쳐야할부분이야!!
 			 * 이거 json 에서 

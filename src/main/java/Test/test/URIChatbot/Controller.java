@@ -114,21 +114,13 @@ public class Controller {
 		if(FLAG.equals("teaching Stop")) {
 			if(IsYes(line)) {
 				FLAG = "default";
-				return JsnRespond.MakeJsonObject("그만둘께요");
+				return JsnRespond.MakeJsonObject("그만둘게요");
 			}	
 		}
 		logger.info("FLAG : "+FLAG);
 
 		return line;
 		
-		
-
-	
-		
-		
-
-		
-
 	}
 
 	private String makebuttons() {

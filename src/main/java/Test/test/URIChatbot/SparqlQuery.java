@@ -124,20 +124,19 @@ public class SparqlQuery {
 			logger.info(e.getMessage());
 		}
 		
-		logger.info("sb : " + sb.toString());
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		logger.info("jsonObj : " + jsonObj.toString());
+		logger.info("SearchDB_obj_StoreName & jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		logger.info("results : " + results.toString());
+		logger.info("SearchDB_obj_StoreName & results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		logger.info("jArray : " + jArray.toString());
+		logger.info("SearchDB_obj_StoreName & jArray : " + jArray.toString());
 		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List		
 		for (int i = 0; i < jArray.length(); i++) { //JSONArray 내 json 개수만큼 for문 동작
 			String temp = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
 			resultArr.add(temp);
-			logger.info("temp(array) : " + temp);
+			logger.info("SearchDB_obj_StoreName & temp(array) : " + temp);
 	    }
 		return resultArr;
 	}
@@ -167,17 +166,17 @@ public class SparqlQuery {
 		} catch (IOException e) {
 			logger.info(e.getMessage());
 		}
-		logger.info("sb : " + sb.toString());
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		logger.info("jsonObj : " + jsonObj.toString());
+		logger.info("SearchDB_SP & jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		logger.info("results : " + results.toString());
+		logger.info("SearchDB_SP &results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		logger.info("jArray : " + jArray.toString());
+		logger.info("SearchDB_SP &jArray : " + jArray.toString());
+		if(jArray.length()==0) return "";
 		String objectResult = jArray.getJSONObject(0).getJSONObject("object").getString("value");
-		logger.info("objectResult : " + objectResult);
+		logger.info("SearchDB_SP & objectResult : " + objectResult);
 		return objectResult;
 
 	}
@@ -244,21 +243,20 @@ public class SparqlQuery {
 		} catch (IOException e) {
 			logger.info(e.getMessage());
 		}
-		logger.info("sb : " + sb.toString());
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		logger.info("jsonObj : " + jsonObj.toString());
+		logger.info("DecideStoreBySplit & jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		logger.info("results : " + results.toString());
+		logger.info("DecideStoreBySplit & results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		logger.info("jArray : " + jArray.toString());
+		logger.info("DecideStoreBySplit & jArray : " + jArray.toString());
 		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List
 		
 		for (int i = 0; i < jArray.length(); i++) { //JSONArray 내 json 개수만큼 for문 동작
 			String temp = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
 			resultArr.add(temp);
-			logger.info("temp(array) : " + temp);
+			logger.info("DecideStoreBySplit &  temp(array) : " + temp);
 	    }
 		return resultArr;
 	}
@@ -286,17 +284,17 @@ public class SparqlQuery {
 				logger.info(line);
 				sb.append(line);
 			}
-			logger.info("sb : " + sb.toString());
 			String sbToString = sb.toString();
 			JSONObject jsonObj = null;
 			jsonObj = new JSONObject(sbToString);
-			logger.info("jsonObj : " + jsonObj.toString());
+			logger.info("matchSubject & jsonObj : " + jsonObj.toString());
 			JSONObject results = (JSONObject) jsonObj.get("results");
-			logger.info("results : " + results.toString());
+			logger.info("matchSubject & results : " + results.toString());
 			JSONArray jArray = (JSONArray) results.get("bindings");
-			logger.info("jArray : " + jArray.toString());
+			logger.info("matchSubject & jArray : " + jArray.toString());
+			if(jArray.length()==0) return "";
 			StoreSub = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
-			logger.info("StoreSub : " + StoreSub);
+			logger.info("matchSubject & StoreSub : " + StoreSub);
 
 		} catch (IOException e) {
 			logger.info(e.getMessage());
@@ -323,17 +321,17 @@ public class SparqlQuery {
 		} catch (IOException e) {
 			logger.info(e.getMessage());
 		}
-		logger.info("sb : " + sb.toString());
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		logger.info("jsonObj : " + jsonObj.toString());
+		logger.info("searchStoreName& jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		logger.info("results : " + results.toString());
+		logger.info("searchStoreName& results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		logger.info("jArray : " + jArray.toString());
+		logger.info("searchStoreName& jArray : " + jArray.toString());
+		if(jArray.length()==0) return "";
 		String storeName = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
-		logger.info("storeName : " + storeName);
+		logger.info("searchStoreName& storeName : " + storeName);
 		return storeName;
 	}
 
@@ -440,6 +438,7 @@ public class SparqlQuery {
 		logger.info("searchP & results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
 		logger.info("searchP & jArray : " + jArray.toString());
+		if(jArray.length()==0) return "";
 		String subjectResult = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
 		logger.info("searchP & subjectResult : " + subjectResult);
 		return subjectResult;
@@ -495,20 +494,19 @@ public class SparqlQuery {
 		} catch (IOException e) {
 			logger.info(e.getMessage());
 		}
-		logger.info("sb : " + sb.toString());
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		logger.info("jsonObj : " + jsonObj.toString());
+		logger.info("UnionConditionSparql & jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
 		logger.info("results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		logger.info("jArray : " + jArray.toString());
+		logger.info("UnionConditionSparql & jArray : " + jArray.toString());
 		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List		
 		for (int i = 0; i < jArray.length(); i++) { //JSONArray 내 json 개수만큼 for문 동작
 			String temp = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
 			resultArr.add(temp);
-			logger.info("temp(array) : " + temp);
+			logger.info("UnionConditionSparql & temp(array) : " + temp);
 	    }
 		return resultArr;
 	}
@@ -547,17 +545,17 @@ public class SparqlQuery {
 			logger.info(e.getMessage());
 		}
 		
-		logger.info("sb : " + sb.toString());
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		logger.info("jsonObj : " + jsonObj.toString());
+		logger.info("Store_type_uri & sonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		logger.info("results : " + results.toString());
+		logger.info("Store_type_uri & results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		logger.info("jArray : " + jArray.toString());
+		logger.info("Store_type_uri & jArray : " + jArray.toString());
+		if(jArray.length()==0) return "";
 		String subjectResult = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
-		logger.info("subjectResult : " + subjectResult);
+		logger.info("Store_type_uri & subjectResult : " + subjectResult);
 		return subjectResult;
 	}
 

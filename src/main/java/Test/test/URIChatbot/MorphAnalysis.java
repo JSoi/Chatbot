@@ -99,11 +99,11 @@ public class MorphAnalysis {
 
 				predicate_spec = query.matchPredicate(predicate);
 				if (predicate_spec.equals("")) {
-					return respond.MakeJsonObject("매치되는 정보 분류가 없어요 ㅠㅠ");
+					return "매치되는 정보 분류가 없어요 ㅠㅠ";
 
 				}
 			} else {
-				return respond.MakeJsonObject("잘 이해하지 못했어요");
+				return "잘 이해하지 못했어요";
 
 			}
 
@@ -165,6 +165,9 @@ public class MorphAnalysis {
 		logger.info("realstorename - " + realstorename + " // predicate - " + predicate);
 		logger.info("-------------------------------------------------------------------");
 		String finalResult = query.SearchDB_SP(realstorename, predicate);
+		logger.info("-------------------------------------------------------------------");
+		logger.info("finalResult - " + finalResult);
+		logger.info("-------------------------------------------------------------------");
 		if (finalResult.equals("")) { // 해당 가게 정보가 없을 경우
 			return realstorename + "의 " + predicate + " 정보가 없습니다. 가르치기 명령어를 통해 알려주세요!";
 		}

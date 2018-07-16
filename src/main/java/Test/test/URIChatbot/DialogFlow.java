@@ -22,16 +22,23 @@ public class DialogFlow {
 			try {
 				AIRequest request = new AIRequest(text);
 				logger.info(request.getSessionId());
-
 				AIResponse response = dataService.request(request);
 				logger.info(response.getStatus().getCode().toString());
-
+				logger.info("speechresponse 이전");
 				String speechResponse = response.getResult().getFulfillment().getSpeech();
 				if (response.getStatus().getCode() == 200) {
+					logger.info("코드 200");
 					rsult = speechResponse;
+					logger.info(rsult);
+					if(rsult.equals("")) {
+						logger.info("real NULL...pls");
+					}
+					return rsult;
 				}
 				else {
 					rsult =  "badInput";
+					logger.info("badinput");
+					return rsult;
 				}
 			}
 			catch(Exception ex) {

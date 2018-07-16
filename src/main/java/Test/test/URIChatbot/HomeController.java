@@ -70,6 +70,7 @@ public class HomeController {
 	@SuppressWarnings("unchecked")
 	@RequestMapping(value = "/keyboard", method = RequestMethod.GET,produces="application/json;charset=UTF-8")
 	public String keyboard() {
+		logger.info("keyboard");
 		JSONObject example = new JSONObject();
 		example.put("user_key", "encrypterUserKey");
 		example.put("type", "text");
@@ -96,7 +97,7 @@ public class HomeController {
 	,produces="application/json;charset=UTF-8")
 	@ResponseBody
 	public String message(@RequestBody String object) throws AIServiceException, java.text.ParseException, IOException, ParseException {
-
+		logger.info("MESSAGE");
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(object);
 		JSONObject parsingJson = (JSONObject)obj;

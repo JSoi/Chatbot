@@ -315,7 +315,7 @@ INFO : Test.test.URIChatbot.SparqlQuery - }
 			if (realArray.toList().size() != 0)
 				StoreSub = realArray.toString();*/
 			
-			logger.info("StoreSub : " + sb);
+			logger.info("StoreSub : " + StoreSub);
 
 		} catch (IOException e) {
 			logger.info(e.getMessage());

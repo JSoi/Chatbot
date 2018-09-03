@@ -79,29 +79,35 @@ public class MorphAnalysis {
 			responBody = new String(buffer);
 			JSONParser parser = new JSONParser();
 			JSONObject root = (JSONObject) parser.parse(responBody);
+
+			logger.info("--------return_object----------");
 			JSONObject return_object = (JSONObject) root.get("return_object");
+			logger.info("--------orgQInfo----------");
 			JSONObject orgQInfo = (JSONObject) return_object.get("orgQInfo");
+			logger.info("--------orgQUnit----------");
 			JSONObject orgQUnit = (JSONObject) orgQInfo.get("orgQUnit");
+			logger.info("--------nDoc----------");
 			JSONObject nDoc = (JSONObject) orgQUnit.get("ndoc");
+			logger.info("--------sentence----------");
 
 			JSONArray sentence = (JSONArray) nDoc.get("sentence");
+
 			JSONObject morp_bf = (JSONObject) sentence.get(0);
 			JSONArray MORPArray = (JSONArray) morp_bf.get("morp");
 			JSONArray WSDArray = (JSONArray) morp_bf.get("WSD");
 			JSONArray vLATs = (JSONArray) orgQUnit.get("vLATs");
-
+			logger.info("////////////	  vLATs 이전");
 			if (vLATs.size() != 0) { // 어휘정답유형 존재할 경우 - Predicate로 취급해준다
 				JSONObject strLAT_o = (JSONObject) vLATs.get(0);
 				String strLAT = (String) strLAT_o.get("strLAT");
-				// System.out.println("ASSUMED PREDICATE = " + strLAT);
 				predicate = strLAT;
 				predicate.trim();
-
 				predicate_spec = query.matchPredicate(predicate);
 				if (predicate_spec.equals("")) {
-					return "매치되는 정보 분류가 없어요 ㅠㅠ";
-
+					//return "매치되는 정보 분류가 없어요 ㅠㅠ";
+					return (String) query.Crawling().get(0);
 				}
+				logger.info("///////////매치되는 정보 존재");
 			} else {
 				return "잘 이해하지 못했어요";
 
@@ -126,6 +132,7 @@ public class MorphAnalysis {
 			}
 
 			if (query.Whether_Info_Store(predicate_spec)) {
+				logger.info("-------------------가게, 카페, 술집 메서드 진입 ----------------------------");
 				/** predicate이 가게, 카페, 술집인 경우 */
 				int cutLine = NounList.lastIndexOf(predicate);
 				ArrayList<String> DependencyList = new ArrayList<String>(NounList.subList(0, cutLine));
@@ -175,7 +182,7 @@ public class MorphAnalysis {
 	}
 
 	/**
-	 * 여기에 들어가는
+	 * 여기에 들어가는 
 	 */
 	public String AnswerSuitableStore(String predicate, ArrayList<String> arr) {
 		// 가게를 한정하기 - 일반 음식점, 카페, 술집 등 분류해서 필터링
@@ -186,7 +193,9 @@ public class MorphAnalysis {
 				return s + " 를 추천드릴게요";
 			}
 		}
-		return "만족하는 가게가 없어요 :(";// CRAWLING!!
+		//return "만족하는 가게가 없어요 :(";// CRAWLING!!
+		/**test*/
+		return query.Crawling().get(0).toString();
 	}
 
 	private String Answer(String subject, String predicate, String objective) {

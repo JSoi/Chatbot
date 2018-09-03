@@ -9,10 +9,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 
 public class SparqlQuery {
 	private Logger logger = LoggerFactory.getLogger(SparqlQuery.class);
@@ -557,6 +567,64 @@ public class SparqlQuery {
 		String subjectResult = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
 		logger.info("Store_type_uri & subjectResult : " + subjectResult);
 		return subjectResult;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public ArrayList Crawling() {
+		ArrayList<String> realResult = new ArrayList<String>();
+		if (System.getProperty("os.name").toLowerCase().indexOf("linux") > -1) {
+			System.setProperty("webdriver.chrome.driver", "/home/ubuntu/chromedriver");
+		}
+		WebDriver driver = new ChromeDriver();
+		driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
+		driver.manage().timeouts().setScriptTimeout(20, TimeUnit.SECONDS);
+		// And now use this to visit Google
+		driver.get("https://www.google.com/maps/search/제주서귀포맛집");
+		// Check the title of the page
+		List<WebElement> results = driver.findElements(By.className("section-result-content"));
+		for (WebElement t : results) {
+			WebElement a = t.findElement(By.xpath(".//h3[@class='section-result-title']/span"));
+			List testRating = t.findElements(By.xpath(".//span[@class='section-result-rating']/span"));
+			List testRunningHour = t.findElements(By.className("section-result-opening-hours"));
+			List testDetails = t.findElements(By.className("section-result-details"));
+			List testLocation = t.findElements(By.className("section-result-location"));
+			String row = "";
+			row += "상점 이름 : " + a.getText() + "\t";
+			if (!testRating.isEmpty()) {
+				WebElement b = t.findElement(By.xpath(".//span[@class='section-result-rating']/span"));
+				row += "별점 : " + b.getText() + "\t";
+			}
+			if (!testRunningHour.isEmpty()) {
+				WebElement open = t.findElement(By.className("section-result-opening-hours"));
+				String open_test = open.getText();
+				if (!open_test.replaceAll(" ", "").equals("")) {
+					row += "영업시간 : " + open.getText() + "\t";
+				}
+			}
+			if (!testDetails.isEmpty()) {
+				WebElement details = t.findElement(By.className("section-result-details"));
+				row += "디테일 : " + details.getText() + "\t";
+			}
+			if (!testLocation.isEmpty()) {
+				WebElement loc = t.findElement(By.className("section-result-location"));
+				row += "주소 : " + loc.getText() + "\t";
+			}
+			realResult.add(row);
+		}
+		// Google's search is rendered dynamically with JavaScript.
+		// Wait for the page to load, timeout after 10 seconds
+		//(new WebDriverWait(driver, 10)).until(new ExpectedCondition<Boolean>() {
+		//	public Boolean apply(WebDriver d) {
+		//		return d.getTitle().toLowerCase().startsWith("궁동맛집");
+		//	}
+		//});
+
+		// Should see: "cheese! - Google Search"
+		// System.out.println("Page title is: " + driver.getTitle());
+
+		// Close the browser
+		driver.quit();
+		return realResult;
 	}
 
 

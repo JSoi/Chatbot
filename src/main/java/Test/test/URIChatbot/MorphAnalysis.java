@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,16 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import com.google.gson.Gson;
 
@@ -38,6 +49,7 @@ public class MorphAnalysis {
 		respond = new MakeResponse();
 	}
 
+	@SuppressWarnings("unchecked")
 	public String analyze(String text) throws ParseException {
 		Map<String, Object> request = new HashMap<>();
 		Map<String, String> argument = new HashMap<>();
@@ -93,6 +105,7 @@ public class MorphAnalysis {
 			JSONArray sentence = (JSONArray) nDoc.get("sentence");
 
 			JSONObject morp_bf = (JSONObject) sentence.get(0);
+			JSONArray MORPEVALArray = (JSONArray) morp_bf.get("morp_eval");
 			JSONArray MORPArray = (JSONArray) morp_bf.get("morp");
 			JSONArray WSDArray = (JSONArray) morp_bf.get("WSD");
 			JSONArray vLATs = (JSONArray) orgQUnit.get("vLATs");
@@ -104,8 +117,8 @@ public class MorphAnalysis {
 				predicate.trim();
 				predicate_spec = query.matchPredicate(predicate);
 				if (predicate_spec.equals("")) {
-					//return "매치되는 정보 분류가 없어요 ㅠㅠ";
-					return (String) query.Crawling().get(0);
+					return "매치되는 정보 분류가 없어요 ㅠㅠ";
+					//return (String) Crawling().get(0);
 				}
 				logger.info("///////////매치되는 정보 존재");
 			} else {
@@ -114,13 +127,26 @@ public class MorphAnalysis {
 			}
 
 			ArrayList<String> NNGList = new ArrayList<String>();
+			ArrayList<String> VANNGList = new ArrayList<String>();
 			ArrayList<String> NounList = new ArrayList<String>();
+			/**조사만 제외한 것 - 상점명을 온전히 가져오기 위함 */
 			for (int MCount = 0; MCount < MORPArray.size(); MCount++) {
 				JSONObject Mtemp = (JSONObject) MORPArray.get(MCount);
 				String type = (String) Mtemp.get("type");
 				String NNGString = (String) Mtemp.get("lemma");
 				if (!type.contains("J")) {
 					NNGList.add(NNGString);
+					logger.info("MCountNNG : " + NNGString);
+				}
+			}
+			/** 형용사, 명사만을 포함한 것 - 태그 정보 온전히 가져오기 위함 */
+			for (int MACount = 0; MACount < MORPEVALArray.size(); MACount++) {
+				JSONObject MAtemp = (JSONObject) MORPEVALArray.get(MACount);
+				String type = (String) MAtemp.get("result");
+				String NNGVAString = (String) MAtemp.get("target");
+				if (type.contains("NNG") || type.contains("VA")) {
+					VANNGList.add(NNGVAString);
+					logger.info("MA CountNNGVA : " + NNGVAString);
 				}
 			}
 			for (int WCount = 0; WCount < WSDArray.size(); WCount++) {
@@ -128,14 +154,24 @@ public class MorphAnalysis {
 				String type = (String) Wtemp.get("type");
 				if (type.equals("NNG")) {
 					NounList.add((String) Wtemp.get("text"));
+					logger.info("WCountNNG : " + (String) Wtemp.get("text"));
 				}
 			}
 
+			logger.info("PREDICATE : " + predicate);
+			logger.info("PREDICATE_SPEC : " + predicate_spec);
 			if (query.Whether_Info_Store(predicate_spec)) {
 				logger.info("-------------------가게, 카페, 술집 메서드 진입 ----------------------------");
 				/** predicate이 가게, 카페, 술집인 경우 */
-				int cutLine = NounList.lastIndexOf(predicate);
-				ArrayList<String> DependencyList = new ArrayList<String>(NounList.subList(0, cutLine));
+				
+				int cutLine = VANNGList.lastIndexOf(predicate);
+				String conditionstoLine = "";
+				for(String a : VANNGList) {
+					conditionstoLine += a + "\t";
+				}
+				logger.info("NounList + " + conditionstoLine);
+				
+				ArrayList<String> DependencyList = new ArrayList<String>(VANNGList.subList(0, cutLine));
 				Answer = AnswerSuitableStore(predicate, DependencyList);
 
 			} else {
@@ -154,9 +190,12 @@ public class MorphAnalysis {
 	/**
 	 * @param predicate
 	 * @param NNGList
-	 *            형태소 분석이 끝난 문장의 구성요소가 들어 있는
+	 *            형태소 분석이 끝난 문장의 구성요소가 들어 있는 리스트
+	 * @throws IOException 
 	 */
-	public String AnswerStoreInfo(String predicate, ArrayList<String> NNGList) {
+	@SuppressWarnings("unchecked")
+	public String AnswerStoreInfo(String predicate, ArrayList<String> NNGList) throws IOException {
+		logger.info("----------------------answerstoreinfo진입--------------------------");
 		String linewithReal = "";
 		for (String s : NNGList)
 			linewithReal += s;
@@ -177,30 +216,80 @@ public class MorphAnalysis {
 		logger.info("-------------------------------------------------------------------");
 		if (finalResult.equals("")) { // 해당 가게 정보가 없을 경우
 			return realstorename + "의 " + predicate + " 정보가 없습니다. 가르치기 명령어를 통해 알려주세요!";
+/**
+			String testline = "";
+			ArrayList<String> cResult = Crawling();
+			for(String a : cResult) {
+				testline += a;
+			}
+			return testline;
+			*/
 		}
 		return Answer(realstorename, predicate, finalResult);
 	}
 
 	/**
 	 * 여기에 들어가는 
+	 * @throws IOException 
 	 */
-	public String AnswerSuitableStore(String predicate, ArrayList<String> arr) {
+	public String AnswerSuitableStore(String predicate, ArrayList<String> arr) throws IOException {
 		// 가게를 한정하기 - 일반 음식점, 카페, 술집 등 분류해서 필터링
 		ArrayList<String> suitableStores = new ArrayList<String>();
+		logger.info("---------------ANSWERSUITABLESTORE----------------");
 		suitableStores = query.UnionConditionSparql(predicate, arr);
 		if (!suitableStores.isEmpty()) {
 			for (String s : suitableStores) {
 				return s + " 를 추천드릴게요";
 			}
 		}
-		//return "만족하는 가게가 없어요 :(";// CRAWLING!!
-		/**test*/
-		return query.Crawling().get(0).toString();
+		return "만족하는 가게가 없어요 :(";// CRAWLING!!
+		/**test
+		String testline = "";
+		ArrayList<String> cResult = Crawling();
+		for(String a : cResult) {
+			testline += a;
+		}
+		return testline;
+		*/
 	}
 
 	private String Answer(String subject, String predicate, String objective) {
 		// TODO Auto-generated method stub
 		return subject + "의 " + predicate + "(은)는 " + objective + "입니다.";
 	}
+	
+	@SuppressWarnings("rawtypes")
+	public ArrayList Crawling() throws IOException {
+		ArrayList<String> realResult = new ArrayList<String>();
+		// Document url =
+		// Jsoup.connect("https://www.google.com/maps/search/제주서귀포맛집").get();
+		Connection.Response response = Jsoup.connect("https://www.diningcode.com/list.php?query=궁동맛집")
+				.method(Connection.Method.GET).execute();
+		Document url = response.parse();
+		System.out.println(url);
+		Elements resultList = url.select("dc-restaurant");
+		for (Element t : resultList) {
+			// Element a =
+			// t.findElement(By.xpath(".//h3[@class='section-result-title']/span"));
+			Elements a = t.select(".dc-restaurant-name").select("a");
+			// Elements testRating =
+			// t.select("span").select(".section-result-rating").select("span");
+			// Elements testRunningHour = t.select(".section-result-opening-hours");
+			Element menu = t.select(".dc-restaurant-category").first();
+			Elements exDetails = t.select(".dc-restaurant-info");
+			Element tag = exDetails.get(0);
+			Element loc = exDetails.get(1);
+			Element phone = exDetails.get(2);
 
+			String row = "";
+			row += "상점 이름 : " + a.text() + "\t";
+			row += "메뉴" + menu.text() + "\t";
+			row += "주소 : " + loc.text() + "\t";
+			row += "연락처 : " + phone.text() + "\t";
+			row += "태그 : " + tag.text() + "\t";
+			realResult.add(row);
+		}
+
+		return realResult;
+	}
 }

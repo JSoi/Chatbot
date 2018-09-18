@@ -31,7 +31,6 @@ public class MakeResponse {
 		jsArray.addAll(Buttons);
 		JsonArray buttonarr = gson.toJsonTree(jsArray).getAsJsonArray();
 		keyboard.put("type", "buttons");
-
 		keyboard.put("buttons", buttonarr);
 		res.put("keyboard", keyboard);
 		return res.toJSONString();
@@ -51,5 +50,27 @@ public class MakeResponse {
 		return res.toString();
 
 	}
+	
+	public String MakeStoreRecommend(String pic_url, String storename, String spec_url) {
+		JsonObject photo = new JsonObject();
+		JsonObject button = new JsonObject();
+		JsonObject message = new JsonObject();
+		JsonObject res = new JsonObject();
+
+		message.addProperty("text", storename + "를 추천드립니다~");
+		if (!pic_url.equals("")) {
+			photo.addProperty("url", pic_url);
+			photo.addProperty("width", 640);
+			photo.addProperty("height", 480);
+			message.add("photo", photo);
+		}
+		button.addProperty("label", "더 찾아보기");
+		button.addProperty("url", spec_url);
+		message.add("message_button", button);
+
+		res.add("message", message);
+		return res.toString();
+	}
+	
 
 }

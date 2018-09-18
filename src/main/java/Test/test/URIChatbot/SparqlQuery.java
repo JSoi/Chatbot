@@ -9,24 +9,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Scanner;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 public class SparqlQuery {
 	private Logger logger = LoggerFactory.getLogger(SparqlQuery.class);
@@ -80,11 +79,13 @@ public class SparqlQuery {
 		String trimStore = subject.replace(" ", "");
 		String StoreSub = matchSubject(trimStore);
 		String StorePre = matchPredicate(Objective); // 카페 -> store:카페로 찾아줌
-		if (StorePre.equals("")) StorePre = Objective;
+		if (!predicate.equals("음식점분류"))
+			StorePre = "\"" + Objective + "\"";
 		logger.info("subject - " + subject + "  predicate - " + predicate + "  Objective - " + Objective);
 		logger.info("MATCHPRE : " + StorePre);
-		//final String UPDATE_TEMPLATE = "PREFIX stores: <http://13.209.53.196:3030/stores#>" + "INSERT DATA" + "{ <"
-		//		+ StoreSub + ">    stores:" + predicate + "   \"" + Objective + "\" ." + "}   ";
+		// final String UPDATE_TEMPLATE = "PREFIX stores:
+		// <http://13.209.53.196:3030/stores#>" + "INSERT DATA" + "{ <"
+		// + StoreSub + "> stores:" + predicate + " \"" + Objective + "\" ." + "} ";
 		final String UPDATE_TEMPLATE = "PREFIX stores: <http://13.209.53.196:3030/stores#>" + "INSERT DATA" + "{ <"
 				+ StoreSub + ">    stores:" + predicate + "   " + StorePre + " ." + "}   ";
 		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-update", "--service",
@@ -138,7 +139,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -148,16 +149,16 @@ public class SparqlQuery {
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		//logger.info("SearchDB_obj_StoreName & jsonObj : " + jsonObj.toString());
+		// logger.info("SearchDB_obj_StoreName & jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		//logger.info("SearchDB_obj_StoreName & results : " + results.toString());
+		// logger.info("SearchDB_obj_StoreName & results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		//logger.info("SearchDB_obj_StoreName & jArray : " + jArray.toString());
+		// logger.info("SearchDB_obj_StoreName & jArray : " + jArray.toString());
 		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List
 		for (int i = 0; i < jArray.length(); i++) { // JSONArray 내 json 개수만큼 for문 동작
 			String temp = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
 			resultArr.add(temp);
-			//logger.info("SearchDB_obj_StoreName & temp(array) : " + temp);
+			// logger.info("SearchDB_obj_StoreName & temp(array) : " + temp);
 		}
 		return resultArr;
 	}
@@ -182,7 +183,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -191,15 +192,15 @@ public class SparqlQuery {
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		//logger.info("SearchDB_SP & jsonObj : " + jsonObj.toString());
+		// logger.info("SearchDB_SP & jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		//logger.info("SearchDB_SP &results : " + results.toString());
+		// logger.info("SearchDB_SP &results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		//logger.info("SearchDB_SP &jArray : " + jArray.toString());
+		// logger.info("SearchDB_SP &jArray : " + jArray.toString());
 		if (jArray.length() == 0)
 			return "";
 		String objectResult = jArray.getJSONObject(0).getJSONObject("object").getString("value");
-		//logger.info("SearchDB_SP & objectResult : " + objectResult);
+		// logger.info("SearchDB_SP & objectResult : " + objectResult);
 		return objectResult;
 
 	}
@@ -209,14 +210,14 @@ public class SparqlQuery {
 	 * List AB 검색 List BC 검색 List ABC 검색 List 검색 후 결과가 있다면 그걸 Store로 결정
 	 */
 
-	public String DecideWhichStore(ArrayList<String> candidates) {
+	public String DecideWhichStore(List<String> storename_arr) {
 		logger.info("DecideWhichStore");
 		ArrayList<String> searchResults = new ArrayList<String>();
 		String returnStoreName = "";
 		String simple = "";
 		String searchedStringCommon = "";
 
-		for (String s : candidates) {
+		for (String s : storename_arr) {
 			simple += s;
 			searchResults.addAll(DecideStoreBySplit(simple));
 		}
@@ -262,7 +263,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -271,17 +272,17 @@ public class SparqlQuery {
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		//logger.info("DecideStoreBySplit & jsonObj : " + jsonObj.toString());
+		// logger.info("DecideStoreBySplit & jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		//logger.info("DecideStoreBySplit & results : " + results.toString());
+		// logger.info("DecideStoreBySplit & results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		//logger.info("DecideStoreBySplit & jArray : " + jArray.toString());
+		// logger.info("DecideStoreBySplit & jArray : " + jArray.toString());
 		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List
 
 		for (int i = 0; i < jArray.length(); i++) { // JSONArray 내 json 개수만큼 for문 동작
 			String temp = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
 			resultArr.add(temp);
-			//logger.info("DecideStoreBySplit &  temp(array) : " + temp);
+			// logger.info("DecideStoreBySplit & temp(array) : " + temp);
 		}
 		return resultArr;
 	}
@@ -312,15 +313,15 @@ public class SparqlQuery {
 			String sbToString = sb.toString();
 			JSONObject jsonObj = null;
 			jsonObj = new JSONObject(sbToString);
-			//logger.info("matchSubject & jsonObj : " + jsonObj.toString());
+			// logger.info("matchSubject & jsonObj : " + jsonObj.toString());
 			JSONObject results = (JSONObject) jsonObj.get("results");
-			//logger.info("matchSubject & results : " + results.toString());
+			// logger.info("matchSubject & results : " + results.toString());
 			JSONArray jArray = (JSONArray) results.get("bindings");
-			//logger.info("matchSubject & jArray : " + jArray.toString());
+			// logger.info("matchSubject & jArray : " + jArray.toString());
 			if (jArray.length() == 0)
 				return "";
 			StoreSub = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
-			//logger.info("matchSubject & StoreSub : " + StoreSub);
+			// logger.info("matchSubject & StoreSub : " + StoreSub);
 
 		} catch (IOException e) {
 			logger.info(e.getMessage());
@@ -342,7 +343,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -351,11 +352,11 @@ public class SparqlQuery {
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		//logger.info("searchStoreName& jsonObj : " + jsonObj.toString());
+		// logger.info("searchStoreName& jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		//logger.info("searchStoreName& results : " + results.toString());
+		// logger.info("searchStoreName& results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		//logger.info("searchStoreName& jArray : " + jArray.toString());
+		// logger.info("searchStoreName& jArray : " + jArray.toString());
 		if (jArray.length() == 0)
 			return "";
 		String storeName = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
@@ -377,7 +378,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -407,7 +408,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -455,7 +456,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -465,15 +466,15 @@ public class SparqlQuery {
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		//logger.info("searchP & jsonObj : " + jsonObj.toString());
+		// logger.info("searchP & jsonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		//logger.info("searchP & results : " + results.toString());
+		// logger.info("searchP & results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		//logger.info("searchP & jArray : " + jArray.toString());
+		// logger.info("searchP & jArray : " + jArray.toString());
 		if (jArray.length() == 0)
 			return "";
 		String subjectResult = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
-		//logger.info("searchP & subjectResult : " + subjectResult);
+		// logger.info("searchP & subjectResult : " + subjectResult);
 		return subjectResult;
 	}
 
@@ -492,7 +493,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -524,7 +525,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -540,9 +541,15 @@ public class SparqlQuery {
 		logger.info("UnionConditionSparql & jArray : " + jArray.toString());
 		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List
 		for (int i = 0; i < jArray.length(); i++) { // JSONArray 내 json 개수만큼 for문 동작
-			String temp = jArray.getJSONObject(0).getJSONObject("object").getString("value");
-			resultArr.add(temp);
-			logger.info("UnionConditionSparql & temp(array) : " + temp);
+			String storename = jArray.getJSONObject(i).getJSONObject("object").getString("value");
+			String location = "";
+			String temp_hap = storename;
+			if (jArray.getJSONObject(i).getJSONObject("loc")!=null) {
+				location = jArray.getJSONObject(i).getJSONObject("loc").getString("value");
+				temp_hap  = temp_hap + "|" + location;
+			}
+			resultArr.add(temp_hap);
+			logger.info("UnionConditionSparql & temp(array) : " + temp_hap);
 		}
 		return resultArr;
 	}
@@ -550,12 +557,18 @@ public class SparqlQuery {
 	// <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> -타입
 	public String unionConditionTemplate(String storetype, ArrayList<String> conditions) {
 		logger.info("unionConditionTemplate");
-		String SEARCH_TEMPLATE_first = "PREFIX store: <http://13.209.53.196:3030/stores#> SELECT ?subject ?object WHERE {";
+		String SEARCH_TEMPLATE_first = "PREFIX store: <http://13.209.53.196:3030/stores#> SELECT ?subject ?object ?loc WHERE {";
 		String SEARCH_TEMPLATE_storetype = " ?subject store:음식점분류 <" + Store_type_uri(storetype) + ">. ";
 		String SEARCH_TEMPLATE_middle = "";
-		for (String onecondition : conditions)
-			SEARCH_TEMPLATE_middle += " ?subject ?temp_p ?temp_o FILTER contains(?temp_o, \"" + onecondition + "\") .";
-		String SEARCH_TEMPLATE_last = "?subject <http://13.209.53.196:3030/stores#이름> ?object. }";
+		int temp_count = 1;
+		for (String onecondition : conditions) {
+			temp_count++;
+			SEARCH_TEMPLATE_middle += " ?subject ?temp_p" + Integer.toString(temp_count) + " ?temp_o"
+					+ Integer.toString(temp_count) + " FILTER contains(?temp_o" + Integer.toString(temp_count) + ", \""
+					+ onecondition + "\") .";
+		}
+		String SEARCH_TEMPLATE_last = "?subject <http://13.209.53.196:3030/stores#이름> ?object. "
+				+ " OPTIONAL { ?subject store:주소 ?loc .}}";
 		final String UPDATE_TEMPLATE = SEARCH_TEMPLATE_first + SEARCH_TEMPLATE_storetype + SEARCH_TEMPLATE_middle
 				+ SEARCH_TEMPLATE_last;
 		return UPDATE_TEMPLATE;
@@ -576,7 +589,7 @@ public class SparqlQuery {
 			String line;
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			while ((line = reader.readLine()) != null) {
-				//logger.info("query : " + line);
+				// logger.info("query : " + line);
 				sb.append(line);
 			}
 		} catch (IOException e) {
@@ -586,16 +599,16 @@ public class SparqlQuery {
 		String sbToString = sb.toString();
 		JSONObject jsonObj = null;
 		jsonObj = new JSONObject(sbToString);
-		//logger.info("Store_type_uri & sonObj : " + jsonObj.toString());
+		// logger.info("Store_type_uri & sonObj : " + jsonObj.toString());
 		JSONObject results = (JSONObject) jsonObj.get("results");
-		//logger.info("Store_type_uri & results : " + results.toString());
+		// logger.info("Store_type_uri & results : " + results.toString());
 		JSONArray jArray = (JSONArray) results.get("bindings");
-		//logger.info("Store_type_uri & jArray : " + jArray.toString());
+		// logger.info("Store_type_uri & jArray : " + jArray.toString());
 		if (jArray.length() == 0)
 			return "";
 		String subjectResult = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
-		//logger.info("Store_type_uri & subjectResult : " + subjectResult);
+		// logger.info("Store_type_uri & subjectResult : " + subjectResult);
 		return subjectResult;
 	}
-
+	
 }

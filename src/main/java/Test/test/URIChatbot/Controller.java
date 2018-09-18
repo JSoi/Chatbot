@@ -54,7 +54,8 @@ public class Controller {
 				return teachingProcess(line);
 			} else {
 				logger.info("default_ask");
-				return JsnRespond.MakeJsonObject(analysis.analyze(line));
+				//return JsnRespond.MakeJsonObject(analysis.analyze(line));
+				return analysis.analyze(line);
 			}
 			/**
 			 * if (line.equals("질문하기")) {

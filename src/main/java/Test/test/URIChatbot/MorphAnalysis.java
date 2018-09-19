@@ -52,14 +52,16 @@ public class MorphAnalysis {
 		respond = new MakeResponse();
 	}
 
-	public String anaylze2(String text) throws IOException {
-		return Crawling("대전맛집");
+	public String analyze2(String text) throws IOException {
+		Crawling("대전맛집");
+		return respond.MakeJsonObject("TEST");
 	}
+
 	@SuppressWarnings({ "unchecked", "unlikely-arg-type" })
 	public String analyze(String text) throws ParseException, IOException {
 		Map<String, Object> request = new HashMap<>();
 		Map<String, String> argument = new HashMap<>();
-		
+
 		argument.put("text", text);
 
 		request.put("access_key", accessKey);
@@ -129,7 +131,6 @@ public class MorphAnalysis {
 				predicate_spec = query.matchPredicate(predicate);
 				if (predicate_spec.equals("")) {
 					return respond.MakeJsonObject("매치되는 정보 분류가 없어요 ㅠㅠ");
-					// return (String) Crawling().get(0);
 				}
 				logger.info("///////////매치되는 정보 존재");
 			} else {
@@ -259,7 +260,9 @@ public class MorphAnalysis {
 		logger.info("finalResult - " + finalResult);
 		logger.info("-------------------------------------------------------------------");
 		if (finalResult.equals("")) { // 해당 가게 정보가 없을 경우
-			return realstorename + "의 " + predicate + " 정보가 없습니다. 가르치기 명령어를 통해 알려주세요!";
+			ArrayList<String> crawl = new ArrayList<String>();
+			if (crawl.isEmpty())
+				return realstorename + "의 " + predicate + " 정보가 없습니다. 가르치기 명령어를 통해 알려주세요!";
 			/**
 			 * String testline = ""; ArrayList<String> cResult = Crawling(); for(String a :
 			 * cResult) { testline += a; } return testline;
@@ -295,16 +298,18 @@ public class MorphAnalysis {
 					location = s.split("\\|")[1];
 					locSearchUrl = geoloc(location);
 				}
-				String returntext = "가게명 : " + name + query.condition_list(name, "주소")
-						+ query.condition_list(name, "사이트") + query.condition_list(name, "연락처")
-						+ query.condition_list(name, "영업시간") + query.condition_list(name, "가격")
-						+ query.condition_list(name, "메뉴") + query.condition_list(name, "태그");
+				String returntext = storeInfoAll(name);
 				return respond.MakeStoreRecommend(locSearchUrl, returntext,
 						"https://www.diningcode.com/isearch.php?query=" + name);
 			}
 		}
-
-		return respond.MakeJsonObject("만족하는 가게가 없어요 :(");// CRAWLING!!
+		String c_result = Crawling(searchtemplate + predicate);
+		if (c_result.equals("")) {
+			return respond.MakeJsonObject("검색을 거쳤지만 만족하는 가게가 없었어요 :(");// CRAWLING fail!!
+		} else {
+			return respond.MakeStoreRecommend(geoloc(query.condition_list_only(c_result, "주소")), storeInfoAll(c_result),
+					"https://www.diningcode.com/isearch.php?query=" + c_result);
+		}
 		/**
 		 * test String testline = ""; ArrayList<String> cResult = Crawling(); for(String
 		 * a : cResult) { testline += a; } return testline;
@@ -316,28 +321,106 @@ public class MorphAnalysis {
 		return subject + "의 " + predicate + "(은)는 " + objective + "입니다.";
 	}
 
-	public String Crawling(String input) throws IOException {
-		ArrayList<String> hrefList = new ArrayList<String>();
-		Connection.Response response = Jsoup.connect("https://www.diningcode.com/list.php?query=" + input)
-				.method(Connection.Method.GET).execute();
-		Document url = response.parse();
-		System.out.println(url);
-		Elements resultList = url.select("div_list").select("li");
-		for (Element t : resultList) {
-			String href = t.select("a").attr("href");
-			CrawlingSpec(href);
-		}
-		
-		return "";
+	public String storeInfoAll(String name) {
+		return "가게명 : " + name + query.condition_list(name, "주소") + query.condition_list(name, "사이트")
+				+ query.condition_list(name, "연락처") + query.condition_list(name, "영업시간")
+				+ query.condition_list(name, "가격") + query.condition_list(name, "메뉴")
+				+ query.condition_list(name, "태그");
 	}
-	public void CrawlingSpec(String link) throws IOException {
-		ArrayList<String> hrefList = new ArrayList<String>();
-		Connection.Response response = Jsoup.connect(link)
+
+	public String Crawling(String input) throws IOException {
+		logger.info("Crawling INPUT : " + input);
+		String result = "";
+		Connection.Response response = Jsoup.connect("https://www.diningcode.com/isearch.php?query=" + input)
 				.method(Connection.Method.GET).execute();
 		Document url = response.parse();
-		Elements resultList = url.select("ul.list").select("li");
-		for (Element t : resultList) {
+		Elements resultList = url.select("div#div_rn .list li");
+		int crawlSize = Math.min(1, resultList.size());
+		logger.info("crawlsize : " + crawlSize);
+		for (int count = 0; count < crawlSize; count++) {
+			String href = resultList.get(count).select("a").first().attr("href");
+			System.out.println(href);
+			result = CrawlingSpec("https://www.diningcode.com" + href);
 		}
+		return result;
+	}
+
+	/** 새로 생성한 이름 return */
+	public String CrawlingSpec(String link) throws IOException {
+		logger.info("CrawlingSpec");
+		Connection.Response response = Jsoup.connect(link).method(Connection.Method.GET).execute();
+		String name = "";
+		try {
+			Document url = response.parse();
+			Elements resultList = url.select("ul.list").select("li");
+			Elements tagList = resultList.select("li.tag").select("span");
+			name = url.select("div.s-list.pic-grade .tit-point .tit").text();
+			String tagString = "";
+			for (int count = 0; count < tagList.size(); count++) {
+				String tag = tagList.get(count).text();
+				tagString += "#" + tag;
+			}
+			String locat = resultList.select("li.locat").text();
+			String tel = resultList.select("li.tel").text();
+			Elements timeList = url.select("div.busi-hours.short").select("ul.list").select("li");
+			String worktime = "";
+			for (int i = 0; i < timeList.size(); i++) {
+				String r = timeList.get(i).select(".r-txt").text();
+				worktime += r;
+			}
+			Elements menuList = url.select("div.menu-info.short").select("ul.list").select("li");
+			String menuString = "";
+			for (int i = 0; i < menuList.size(); i++) {
+				String r = menuList.get(i).select(".l-txt").text();
+				menuString += r + "+";
+			}
+			if (menuList.size() != 0) {
+				menuString = menuString.substring(0, menuString.length() - 1);
+			}
+			String[] menuSplit = menuString.split("\\+");
+			logger.info("NAME : " + name);
+			logger.info("WORKTIME : " + worktime);
+			logger.info("TEL : " + tel);
+			logger.info("LOCAT : " + locat);
+			logger.info("TAGSTRING : " + tagString);
+			logger.info("MENU : " + menuString);
+			if (!query.storeExist(name)) {
+				String INSERT_TEMPLATE = "";
+				String INSERT_TEMPLATE_FIRST = "PREFIX stores: <http://13.209.53.196:3030/stores#> INSERT DATA {";
+				String INSERT_TEMPLATE_MIDDLE = "";
+				String INSERT_TEMPLATE_LAST = ".}";
+				String trimStore = name.replace(" ", "");
+
+				query.teachNewStore(trimStore);
+				String StoreSub = "<" + query.matchSubject(trimStore) + ">";
+				if (!locat.equals("")) {
+					INSERT_TEMPLATE_MIDDLE += StoreSub + " store:주소 " + "\"" + locat + "\".";
+				}
+				if (!tel.equals("")) {
+					INSERT_TEMPLATE_MIDDLE += StoreSub + " store:전화번호 " + "\"" + tel + "\".";
+				}
+				if (!worktime.equals("")) {
+					INSERT_TEMPLATE_MIDDLE += StoreSub + " store:영업시간 " + "\"" + worktime + "\".";
+				}
+				if (!tagString.equals("")) {
+					query.teachStoreInfo_TagCase(name, tagString);
+				}
+				if (!menuString.equals("")) {
+					for (int i = 1; i < menuSplit.length; i++) {
+						INSERT_TEMPLATE_MIDDLE += StoreSub + " store:메뉴 " + "\"" + menuSplit[i] + "\".";
+					}
+				}
+				INSERT_TEMPLATE = INSERT_TEMPLATE_FIRST + INSERT_TEMPLATE_MIDDLE + INSERT_TEMPLATE_LAST;
+				logger.info("INSERT TEMPLATE : " + INSERT_TEMPLATE);
+				query.teachStoreInfo_withTemplate(INSERT_TEMPLATE);
+			}
+		} catch (Exception e) {
+			logger.info(e.getMessage());
+			return "";
+		}
+		String check = storeInfoAll(name);
+		logger.info("CHECKKKKKKKKKKKKKKK : " + check);
+		return name;
 	}
 
 	public String geoloc(String loc) throws ParseException, UnsupportedEncodingException {

@@ -135,6 +135,28 @@ public class SparqlQuery {
 			logger.info(e.getMessage());
 		}
 	}
+	
+	public void teachStoreInfo_withTemplate(String template) {// objective is RAW!!
+		// TODO predicate 추가하기.
+		logger.info("teachStoreInfo_template");
+		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-update", "--service",
+				"http://13.209.53.196:3030/stores", template };
+		Process proc = null;
+
+		try {
+			proc = Runtime.getRuntime().exec(args);
+			/** StringBuilder 사용하기 */
+			StringBuilder sb = new StringBuilder();
+			String line;
+			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			while ((line = reader.readLine()) != null) {
+				//logger.info("update : " + line);
+				sb.append(line);
+			}
+		} catch (IOException e) {
+			logger.info(e.getMessage());
+		}
+	}
 
 	// 추가 - 더 수정하기
 	public void teachStoreInfo_TagCase(String subject, String tagLine) {
@@ -578,8 +600,13 @@ public class SparqlQuery {
 	// <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> -타입
 	public String unionConditionTemplate(String storetype, ArrayList<String> conditions) {
 		logger.info("unionConditionTemplate");
+		String typestore = Store_type_uri(storetype);
+		String storetype_query = "<" + typestore + ">";
+		if (storetype.equals("http://13.209.53.196:3030/stores#음식점")) {
+			storetype_query = "?type (?type = store:한식 ||?type = 음식 || ?type = store:양식 ||?type = store:카페 ||?type = store:일식 ||?type = store:술집 ||?type = store:중식)";
+		}
 		String SEARCH_TEMPLATE_first = "PREFIX store: <http://13.209.53.196:3030/stores#> SELECT ?subject ?object ?loc WHERE {";
-		String SEARCH_TEMPLATE_storetype = " ?subject store:음식점분류 <" + Store_type_uri(storetype) + ">. ";
+		String SEARCH_TEMPLATE_storetype = " ?subject store:음식점분류  " + storetype_query + " . ";
 		String SEARCH_TEMPLATE_middle = "";
 		int temp_count = 1;
 		for (String onecondition : conditions) {
@@ -632,44 +659,7 @@ public class SparqlQuery {
 		return subjectResult;
 	}
 
-	public String returnSpecByName(String name) {
-		final String SEARCH_TEMPLATE = "PREFIX store: <http://13.209.53.196:3030/stores#>"
-				+ "SELECT ?subject ?query ?object WHERE {" + "?subject ?predicate \"" + name + "\"."
-				+ "?subject ?query ?object FILTER (?query != store:음식점분류)" + "}";
-		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
-				"http://13.209.53.196:3030/stores", SEARCH_TEMPLATE };
-		Process proc = null;
-		/** StringBuilder 사용하기 */
-		StringBuilder sb = new StringBuilder();
-		try {
-			proc = Runtime.getRuntime().exec(args);
-			String line;
-			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-			while ((line = reader.readLine()) != null) {
-				// logger.info("query : " + line);
-				sb.append(line);
-			}
-		} catch (IOException e) {
-			logger.info(e.getMessage());
-		}
-
-		String sbToString = sb.toString();
-		JSONObject jsonObj = null;
-		jsonObj = new JSONObject(sbToString);
-		logger.info("Store_type_uri & sonObj : " + jsonObj.toString());
-		JSONObject results = (JSONObject) jsonObj.get("results");
-		// logger.info("Store_type_uri & results : " + results.toString());
-		JSONArray jArray = (JSONArray) results.get("bindings");
-		// logger.info("Store_type_uri & jArray : " + jArray.toString());
-		if (jArray.length() == 0)
-			return "";
-		String subjectResult = jArray.getJSONObject(0).getJSONObject("subject").getString("value");
-		// logger.info("Store_type_uri & subjectResult : " + subjectResult);
-		return subjectResult;
-	}
-
 	public String condition_list(String storename, String condition) {
-		logger.info("condition_list");
 		final String SEARCH_TEMPLATE = "PREFIX store: <http://13.209.53.196:3030/stores#>"
 				+ " SELECT ?temp WHERE { ?subject store:이름\"" + storename + "\". ?subject store:" + condition
 				+ " ?temp. }";
@@ -707,7 +697,45 @@ public class SparqlQuery {
 			}
 			resultString = "\n" + resultString.substring(0, resultString.length() - 1);
 		}
+		return resultString;
+	}
 
+	public String condition_list_only(String storename, String condition) {
+		final String SEARCH_TEMPLATE = "PREFIX store: <http://13.209.53.196:3030/stores#>"
+				+ " SELECT ?temp WHERE { ?subject store:이름\"" + storename + "\". ?subject store:" + condition
+				+ " ?temp. }";
+		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
+				"http://13.209.53.196:3030/stores", SEARCH_TEMPLATE };
+		Process proc = null;
+		/** StringBuilder 사용하기 */
+		StringBuilder sb = new StringBuilder();
+		try {
+			proc = Runtime.getRuntime().exec(args);
+			String line;
+			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			while ((line = reader.readLine()) != null) {
+				sb.append(line);
+			}
+		} catch (IOException e) {
+			logger.info(e.getMessage());
+		}
+
+		String sbToString = sb.toString();
+		JSONObject jsonObj = null;
+		jsonObj = new JSONObject(sbToString);
+		JSONObject results = (JSONObject) jsonObj.get("results");
+		JSONArray jArray = (JSONArray) results.get("bindings");
+		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List
+		for (int i = 0; i < jArray.length(); i++) { // JSONArray 내 json 개수만큼 for문 동작
+			String temp = jArray.getJSONObject(0).getJSONObject("temp").getString("value");
+			resultArr.add(temp);
+		}
+		String resultString = "";
+		if (!resultArr.isEmpty()) {
+			for (String i : resultArr) {
+				return i;
+			}
+		}
 		return resultString;
 	}
 }

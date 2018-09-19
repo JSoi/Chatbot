@@ -52,12 +52,14 @@ public class MorphAnalysis {
 		respond = new MakeResponse();
 	}
 
+	public String anaylze2(String text) throws IOException {
+		return Crawling("대전맛집");
+	}
 	@SuppressWarnings({ "unchecked", "unlikely-arg-type" })
-	public String analyze(String text) throws ParseException, UnsupportedEncodingException {
+	public String analyze(String text) throws ParseException, IOException {
 		Map<String, Object> request = new HashMap<>();
 		Map<String, String> argument = new HashMap<>();
-
-		argument.put("analysis_code", analysisCode);
+		
 		argument.put("text", text);
 
 		request.put("access_key", accessKey);
@@ -293,11 +295,12 @@ public class MorphAnalysis {
 					location = s.split("\\|")[1];
 					locSearchUrl = geoloc(location);
 				}
-
-				logger.info("NAME!!!!!!!!!" + name);
-				logger.info("loc!!!!!!!!!" + location);
-				return respond.MakeStoreRecommend(locSearchUrl, name,
-						"https://www.diningcode.com/isearch.php?query=" + searchtemplate);
+				String returntext = "가게명 : " + name + query.condition_list(name, "주소")
+						+ query.condition_list(name, "사이트") + query.condition_list(name, "연락처")
+						+ query.condition_list(name, "영업시간") + query.condition_list(name, "가격")
+						+ query.condition_list(name, "메뉴") + query.condition_list(name, "태그");
+				return respond.MakeStoreRecommend(locSearchUrl, returntext,
+						"https://www.diningcode.com/isearch.php?query=" + name);
 			}
 		}
 
@@ -313,39 +316,28 @@ public class MorphAnalysis {
 		return subject + "의 " + predicate + "(은)는 " + objective + "입니다.";
 	}
 
-	@SuppressWarnings("rawtypes")
-	public ArrayList Crawling() throws IOException {
-		ArrayList<String> realResult = new ArrayList<String>();
-		// Document url =
-		// Jsoup.connect("https://www.google.com/maps/search/제주서귀포맛집").get();
-		Connection.Response response = Jsoup.connect("https://www.diningcode.com/list.php?query=궁동맛집")
+	public String Crawling(String input) throws IOException {
+		ArrayList<String> hrefList = new ArrayList<String>();
+		Connection.Response response = Jsoup.connect("https://www.diningcode.com/list.php?query=" + input)
 				.method(Connection.Method.GET).execute();
 		Document url = response.parse();
 		System.out.println(url);
-		Elements resultList = url.select("dc-restaurant");
+		Elements resultList = url.select("div_list").select("li");
 		for (Element t : resultList) {
-			// Element a =
-			// t.findElement(By.xpath(".//h3[@class='section-result-title']/span"));
-			Elements a = t.select(".dc-restaurant-name").select("a");
-			// Elements testRating =
-			// t.select("span").select(".section-result-rating").select("span");
-			// Elements testRunningHour = t.select(".section-result-opening-hours");
-			Element menu = t.select(".dc-restaurant-category").first();
-			Elements exDetails = t.select(".dc-restaurant-info");
-			Element tag = exDetails.get(0);
-			Element loc = exDetails.get(1);
-			Element phone = exDetails.get(2);
-
-			String row = "";
-			row += "상점 이름 : " + a.text() + "\t";
-			row += "메뉴" + menu.text() + "\t";
-			row += "주소 : " + loc.text() + "\t";
-			row += "연락처 : " + phone.text() + "\t";
-			row += "태그 : " + tag.text() + "\t";
-			realResult.add(row);
+			String href = t.select("a").attr("href");
+			CrawlingSpec(href);
 		}
-
-		return realResult;
+		
+		return "";
+	}
+	public void CrawlingSpec(String link) throws IOException {
+		ArrayList<String> hrefList = new ArrayList<String>();
+		Connection.Response response = Jsoup.connect(link)
+				.method(Connection.Method.GET).execute();
+		Document url = response.parse();
+		Elements resultList = url.select("ul.list").select("li");
+		for (Element t : resultList) {
+		}
 	}
 
 	public String geoloc(String loc) throws ParseException, UnsupportedEncodingException {

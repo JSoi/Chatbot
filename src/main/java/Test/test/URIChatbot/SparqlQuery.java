@@ -430,9 +430,9 @@ public class SparqlQuery {
 
 	public boolean PredicateExist(String predicate) {
 		logger.info("<-------------------  PredicateExist  ------------------->");
-		final String SEARCH_TEMPLATE = "PREFIX stores: <http://13.209.53.196:3030/stores#>  "
-				+ "ASK { ?s <http://purl.org/dc/terms/alternative> | <http://www.w3.org/2000/01/rdf-schema#label> \""
-				+ predicate + "\"  .} ";
+		final String SEARCH_TEMPLATE = "PREFIX stores: <http://13.209.53.196:3030/stores#>  " + "ASK { ?s ?p \""
+				+ predicate
+				+ "\" FILTER (?p = <http://purl.org/dc/terms/alternative> || ?p = <http://www.w3.org/2000/01/rdf-schema#label>)  .} ";
 		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
 				"http://13.209.53.196:3030/stores", SEARCH_TEMPLATE };
 		Process proc = null;
@@ -633,11 +633,9 @@ public class SparqlQuery {
 	}
 
 	public String returnSpecByName(String name) {
-		final String SEARCH_TEMPLATE = "PREFIX store: <http://13.209.53.196:3030/stores#>" + 
-				"SELECT ?subject ?query ?object WHERE {" + 
-				"?subject ?predicate \""+ name +"\"." + 
-				"?subject ?query ?object FILTER (?query != store:음식점분류)" + 
-				"}";
+		final String SEARCH_TEMPLATE = "PREFIX store: <http://13.209.53.196:3030/stores#>"
+				+ "SELECT ?subject ?query ?object WHERE {" + "?subject ?predicate \"" + name + "\"."
+				+ "?subject ?query ?object FILTER (?query != store:음식점분류)" + "}";
 		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
 				"http://13.209.53.196:3030/stores", SEARCH_TEMPLATE };
 		Process proc = null;
@@ -669,5 +667,47 @@ public class SparqlQuery {
 		// logger.info("Store_type_uri & subjectResult : " + subjectResult);
 		return subjectResult;
 	}
-	
+
+	public String condition_list(String storename, String condition) {
+		logger.info("condition_list");
+		final String SEARCH_TEMPLATE = "PREFIX store: <http://13.209.53.196:3030/stores#>"
+				+ " SELECT ?temp WHERE { ?subject store:이름\"" + storename + "\". ?subject store:" + condition
+				+ " ?temp. }";
+		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
+				"http://13.209.53.196:3030/stores", SEARCH_TEMPLATE };
+		Process proc = null;
+		/** StringBuilder 사용하기 */
+		StringBuilder sb = new StringBuilder();
+		try {
+			proc = Runtime.getRuntime().exec(args);
+			String line;
+			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			while ((line = reader.readLine()) != null) {
+				sb.append(line);
+			}
+		} catch (IOException e) {
+			logger.info(e.getMessage());
+		}
+
+		String sbToString = sb.toString();
+		JSONObject jsonObj = null;
+		jsonObj = new JSONObject(sbToString);
+		JSONObject results = (JSONObject) jsonObj.get("results");
+		JSONArray jArray = (JSONArray) results.get("bindings");
+		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List
+		for (int i = 0; i < jArray.length(); i++) { // JSONArray 내 json 개수만큼 for문 동작
+			String temp = jArray.getJSONObject(0).getJSONObject("temp").getString("value");
+			resultArr.add(temp);
+		}
+		String resultString = "";
+		if (!resultArr.isEmpty()) {
+			resultString += condition + " : ";
+			for (String i : resultArr) {
+				resultString += (i + ",");
+			}
+			resultString = "\n" + resultString.substring(0, resultString.length() - 1);
+		}
+
+		return resultString;
+	}
 }

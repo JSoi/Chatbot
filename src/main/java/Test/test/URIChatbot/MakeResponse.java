@@ -53,7 +53,7 @@ public class MakeResponse {
 		JsonObject message = new JsonObject();
 		JsonObject res = new JsonObject();
 
-		message.addProperty("text", storename + "를 추천드립니다~");
+		message.addProperty("text", storename);
 		if (!pic_url.equals("")) {
 			photo.addProperty("url", pic_url);
 			photo.addProperty("width", 640);

@@ -115,13 +115,13 @@ public class Controller {
 			line.trim();
 			FLAG = "teaching Predicates";
 			String makeComment = "";
-			String subject = query.teachNewStore(line);
-			newStore = new TripleStore();
-			if (subject.contains("registered")) {
-				String subArr[] = subject.split(" ");
-				subject = subArr[1];
+			if(query.storeExist(line)) {
 				makeComment = "이미 등록한 상점이네요! ";
 			}
+			else {
+				query.teachNewStore(line);
+			}
+			newStore = new TripleStore();
 			newStore.setSubject(line);
 			return JsnRespond.MakeJsonObject(makeComment + line + "의 정보를 가르쳐 주세요", makebuttonsArr());
 		}

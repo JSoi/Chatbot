@@ -34,11 +34,7 @@ public class MakeResponse {
 		keyboard.put("buttons", buttonarr);
 		res.put("keyboard", keyboard);
 		return res.toJSONString();
-
-	
 	}
-
-	
 
 	public String MakeJsonObject(String input) {
 		JsonObject res = new JsonObject();

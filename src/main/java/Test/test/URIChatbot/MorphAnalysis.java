@@ -74,11 +74,10 @@ public class MorphAnalysis {
 		String realstorename = "";
 		String finalResult = "";
 		String predicate_spec = "";
-		
-		
 
-		//return respond.MakeStoreRecommend(geoloc("대전 중구 태평로"), "테스트", "www.google.com");
-		
+		// return respond.MakeStoreRecommend(geoloc("대전 중구 태평로"), "테스트",
+		// "www.google.com");
+
 		try {
 			logger.info("try진입");
 			url = new URL(openApiURL);
@@ -123,10 +122,11 @@ public class MorphAnalysis {
 				String strLAT = (String) strLAT_o.get("strLAT");
 				predicate = strLAT;
 				predicate.trim();
+				logger.info("질문분석 끝난 PREDICATE : " + predicate);
+				/** Predicate의 종류 : 카페, 음식점 or 메뉴, 영업시간 */
 				predicate_spec = query.matchPredicate(predicate);
 				if (predicate_spec.equals("")) {
 					return respond.MakeJsonObject("매치되는 정보 분류가 없어요 ㅠㅠ");
-					//return "매치되는 정보 분류가 없어요 ㅠㅠ";
 					// return (String) Crawling().get(0);
 				}
 				logger.info("///////////매치되는 정보 존재");
@@ -160,11 +160,9 @@ public class MorphAnalysis {
 						String spec_type = temp.split("/")[1];
 						if (spec_type.equals("NNG")) {
 							VANNGList.add(context);
-							logger.info("!!!!!!!!!!!!VANNGLIST : " + context);
 						}
 						if (spec_type.equals("VA")) {
 							VANNGList.add(NNGVAString);
-							logger.info("!!!!!!!!!!!!VANNGLIST : " + NNGVAString);
 						}
 					}
 				}
@@ -183,10 +181,8 @@ public class MorphAnalysis {
 
 			}
 			int WSDList_cutline = WSDList_text.lastIndexOf(predicate);
-			logger.info("WSDLIST_CUTLINE = " + WSDList_cutline);
 			WSDList_text = WSDList_text.subList(0, WSDList_cutline);
 			WSDList_type = WSDList_type.subList(0, WSDList_cutline);
-			logger.info("222222222222222222222222");
 
 			int removePosition = -1;
 			for (int i = 0; i < WSDList_type.size(); i++) {
@@ -198,15 +194,8 @@ public class MorphAnalysis {
 			if (removePosition != -1 && removePosition != WSDList_type.size()) {
 				WSDList_text = new ArrayList<String>(WSDList_text.subList(0, removePosition));
 				WSDList_type = new ArrayList<String>(WSDList_type.subList(0, removePosition));
-				logger.info("33333333333333333333333");
 			}
 			WSDList = WSDList_text;
-			String WSDTest = "";
-			for (String a : WSDList) {
-				WSDTest += a + "\t";
-			}
-			logger.info("WSD FINAL : " + WSDTest);
-
 			logger.info("PREDICATE : " + predicate);
 			logger.info("PREDICATE_SPEC : " + predicate_spec);
 			if (query.Whether_Info_Store(predicate_spec)) {
@@ -222,6 +211,13 @@ public class MorphAnalysis {
 				ArrayList<String> DependencyList = new ArrayList<String>(VANNGList.subList(0, cutLine));
 				if (DependencyList.isEmpty())
 					return respond.MakeJsonObject("다시 검색해 주세요");
+				/// dddddddddd
+				conditionstoLine = "";
+				for (String a : DependencyList) {
+					conditionstoLine += a + "\t";
+				}
+				logger.info("변한 dependencylist + " + conditionstoLine);
+				logger.info("predicate : " + predicate);
 				return AnswerSuitableStore(predicate, DependencyList);
 
 			} else {
@@ -274,16 +270,16 @@ public class MorphAnalysis {
 	 * 여기에 들어가는
 	 * 
 	 * @throws IOException
-	 * @throws ParseException 
+	 * @throws ParseException
 	 */
 	public String AnswerSuitableStore(String predicate, ArrayList<String> arr) throws IOException, ParseException {
 		// 가게를 한정하기 - 일반 음식점, 카페, 술집 등 분류해서 필터링
 		ArrayList<String> suitableStores = new ArrayList<String>();
 		String searchtemplate = "";
-		for(String a : arr) {
-			searchtemplate+= a;
+		for (String a : arr) {
+			searchtemplate += a;
 		}
-		searchtemplate+=predicate;
+		searchtemplate += predicate;
 		logger.info("---------------ANSWERSUITABLESTORE----------------");
 		suitableStores = query.UnionConditionSparql(predicate, arr);
 		if (!suitableStores.isEmpty()) {
@@ -291,14 +287,17 @@ public class MorphAnalysis {
 				logger.info("S!!!!!!!!!" + s);
 				String name = s;
 				String location = "";
-				if(s.contains("|")) {
+				String locSearchUrl = "";
+				if (s.contains("|")) {
 					name = s.split("\\|")[0];
 					location = s.split("\\|")[1];
+					locSearchUrl = geoloc(location);
 				}
 
 				logger.info("NAME!!!!!!!!!" + name);
 				logger.info("loc!!!!!!!!!" + location);
-				return respond.MakeStoreRecommend(geoloc(location), name, "https://www.diningcode.com/list.php?query="+searchtemplate);
+				return respond.MakeStoreRecommend(locSearchUrl, name,
+						"https://www.diningcode.com/isearch.php?query=" + searchtemplate);
 			}
 		}
 
@@ -348,55 +347,53 @@ public class MorphAnalysis {
 
 		return realResult;
 	}
-	
 
 	public String geoloc(String loc) throws ParseException, UnsupportedEncodingException {
 		String lnglat = "";
-		
+
 		InputStream inputStream = null;
-		loc =  URLEncoder.encode(loc,"UTF-8");
-		String url = "https://maps.googleapis.com/maps/api/geocode/json?address="+loc+"&key=AIzaSyCGmk4qA39DMJMoznd8JqnKuzy2U2puF6A";
-        String json = "";
+		loc = URLEncoder.encode(loc, "UTF-8");
+		String url = "https://maps.googleapis.com/maps/api/geocode/json?address=" + loc
+				+ "&key=AIzaSyCGmk4qA39DMJMoznd8JqnKuzy2U2puF6A";
+		String json = "";
 
-        try {           
-            HttpClient client = HttpClientBuilder.create().build();
-            HttpPost post = new HttpPost(url);
-            HttpResponse response = client.execute(post);
-            HttpEntity entity = response.getEntity();
-            inputStream = entity.getContent();
-        } catch(Exception e) {
-        }
+		try {
+			HttpClient client = HttpClientBuilder.create().build();
+			HttpPost post = new HttpPost(url);
+			HttpResponse response = client.execute(post);
+			HttpEntity entity = response.getEntity();
+			inputStream = entity.getContent();
+		} catch (Exception e) {
+		}
 
-        try {           
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream,"utf-8"),8);
-            StringBuilder sbuild = new StringBuilder();
-            String line = null;
-            while ((line = reader.readLine()) != null) {
-                sbuild.append(line);
-            }
-            inputStream.close();
-            json = sbuild.toString();               
-        } catch(Exception e) {
-        }
+		try {
+			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, "utf-8"), 8);
+			StringBuilder sbuild = new StringBuilder();
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				sbuild.append(line);
+			}
+			inputStream.close();
+			json = sbuild.toString();
+		} catch (Exception e) {
+		}
 
+		// now parse
+		JSONParser parser = new JSONParser();
+		Object obj = parser.parse(json);
+		JSONObject jb = (JSONObject) obj;
 
-        //now parse
-        JSONParser parser = new JSONParser();
-        Object obj = parser.parse(json);
-        JSONObject jb = (JSONObject) obj;
+		// now read
+		JSONArray jsonObject1 = (JSONArray) jb.get("results");
+		JSONObject jsonObject2 = (JSONObject) jsonObject1.get(0);
+		JSONObject jsonObject3 = (JSONObject) jsonObject2.get("geometry");
+		JSONObject location = (JSONObject) jsonObject3.get("location");
 
-        //now read
-        JSONArray jsonObject1 = (JSONArray) jb.get("results");
-        JSONObject jsonObject2 = (JSONObject)jsonObject1.get(0);
-        JSONObject jsonObject3 = (JSONObject)jsonObject2.get("geometry");
-        JSONObject location = (JSONObject) jsonObject3.get("location");
-
-        System.out.println( "Lat = "+location.get("lat"));
-        System.out.println( "Lng = "+location.get("lng"));
-        lnglat =  location.get("lng") + "," + location.get("lat");
-        return "https://openapi.naver.com/v1/map/staticmap.bin?clientId=Jf5OTPFkoCHjr1ZVg4Ol&url=http://13.209.53.196&crs=EPSG:4326&center="
-		+ lnglat + "&level=8&w=320&h=320&baselayer=default&markers=" + lnglat;
+		System.out.println("Lat = " + location.get("lat"));
+		System.out.println("Lng = " + location.get("lng"));
+		lnglat = location.get("lng") + "," + location.get("lat");
+		return "https://openapi.naver.com/v1/map/staticmap.bin?clientId=Jf5OTPFkoCHjr1ZVg4Ol&url=http://13.209.53.196&crs=EPSG:4326&center="
+				+ lnglat + "&level=10&w=320&h=320&baselayer=default&markers=" + lnglat;
 	}
-	
 
 }

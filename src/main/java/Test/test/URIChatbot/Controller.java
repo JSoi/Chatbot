@@ -30,6 +30,9 @@ public class Controller {
 	@SuppressWarnings("serial")
 	private ArrayList<String> yesno = new ArrayList<String>(){{
 	add("네"); add("아니요");}};
+	@SuppressWarnings("serial")
+	private ArrayList<String> storetype = new ArrayList<String>() {{
+		add("한식"); add("중식");add("일식"); add("아시아식");add("양식"); add("술집"); add("카페");}};
 	
 	public Controller() {
 		String key = "017c5fd9b64a4f2ca68debd74d10bbac";
@@ -49,7 +52,7 @@ public class Controller {
 			logger.info("not equals \"\"");
 			return JsnRespond.MakeJsonObject(result);
 		} else {
-			if (line.equals("가르치기") || FLAG.contains("teaching")) {
+			if (line.equals("가르치기") || line.equals("태그입력")|| FLAG.contains("teaching")) {
 				logger.info("teachingprocess nn");
 				return teachingProcess(line);
 			} else {
@@ -77,13 +80,39 @@ public class Controller {
 			FLAG = "teaching Subject";
 			return JsnRespond.MakeJsonObject("등록할 상점의 이름을 적어주세요");
 		}
+		if (line.equals("태그입력")) {
+			FLAG = "tag teaching Subject";
+			return JsnRespond.MakeJsonObject("태그를 등록할 상점의 이름을 적어주세요");
+		}
 		if (line.equals("그만하기")) {
 			FLAG = "teaching Stop";
 			return JsnRespond.MakeJsonObject("가르치는 것을 그만둘까요?", yesno);
 
 		}
+		/**태그 정보*/
+		if(FLAG.equals("tag teaching Subject")) {
+			FLAG = "tag teaching Object";
+			String makeComment = "";
+			newStore = new TripleStore();
+			if (!query.storeExist(line)) {
+				return JsnRespond.MakeJsonObject("등록되지 않은 상점입니다. 등록 후 태그를 등록해주세요. ");
+			}
+			newStore.setSubject(line);
+			return JsnRespond.MakeJsonObject(makeComment + line + "에 입력할 태그를 가르쳐 주세요. #로 구분해 주세요 ^^");
+		}
+		if (FLAG.equals("tag teaching Object")) {
+			logger.info("<----------teachtagclase_obj------------>");
+			logger.info("name : " + newStore.getSubject());
+			logger.info("tag : " + line);
 
+			query.teachStoreInfo_TagCase(newStore.getSubject(), line);
+			FLAG = "default";
+			return JsnRespond.MakeJsonObject(newStore.getSubject() + "의 태그 정보를 입력하였습니다!");
+		}
+
+		/**일반 정보*/
 		if (FLAG.equals("teaching Subject")) {
+			line.trim();
 			FLAG = "teaching Predicates";
 			String makeComment = "";
 			String subject = query.teachNewStore(line);
@@ -93,20 +122,23 @@ public class Controller {
 				subject = subArr[1];
 				makeComment = "이미 등록한 상점이네요! ";
 			}
-			newStore.setSubject(subject);
-			return JsnRespond.MakeJsonObject(makeComment + subject + "의 정보를 가르쳐 주세요", makebuttonsArr());
+			newStore.setSubject(line);
+			return JsnRespond.MakeJsonObject(makeComment + line + "의 정보를 가르쳐 주세요", makebuttonsArr());
 		}
 		if (FLAG.equals("teaching Predicates")) {
 			String predicate = line;
 			newStore.setPredicate(predicate);
 			FLAG = "teaching Predicates " + predicate;
+			if(predicate.equals("음식점분류")) {
+				return JsnRespond.MakeJsonObject("음식점 " + newStore.getSubject() + "의 " + predicate + " 정보를 입력해 주세요", storetype);
+			}
 			return JsnRespond.MakeJsonObject("음식점 " + newStore.getSubject() + "의 " + predicate + " 정보를 입력해 주세요");
 
 		}
 		if (FLAG.equals("teaching Predicates " + newStore.getPredicate())) {
 			newStore.setObject(line);
 			FLAG = "teaching yes or no";
-			return JsnRespond.MakeJsonObject("음식점 " + newStore.getSubject() + "의 " + newStore.getPredicate() + "은 "
+			return JsnRespond.MakeJsonObject("음식점 " + newStore.getSubject() + "의 " + newStore.getPredicate() + "는(은) "
 					+ line + "입니다. 맞으면 예, 틀리면 아니요를 눌러주세요", yesno);
 		}
 		if (FLAG.equals("teaching yes or no")) {

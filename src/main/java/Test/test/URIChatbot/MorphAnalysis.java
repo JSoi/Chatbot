@@ -42,6 +42,15 @@ public class MorphAnalysis {
 	private Gson gson;
 	private SparqlQuery query;
 	private MakeResponse respond;
+	public String resultStoreSparql;
+
+	public String getresultStoreSparql() {
+		return resultStoreSparql;
+	}
+
+	public void setresultStoreSparql(String resultStoreSparql) {
+		this.resultStoreSparql = resultStoreSparql;
+	}
 
 	public MorphAnalysis() {
 		openApiURL = "http://aiopen.etri.re.kr:8000/WiseQAnal";
@@ -50,11 +59,7 @@ public class MorphAnalysis {
 		gson = new Gson();
 		query = new SparqlQuery();
 		respond = new MakeResponse();
-	}
-
-	public String analyze2(String text) throws IOException {
-		Crawling("대전맛집");
-		return respond.MakeJsonObject("TEST");
+		resultStoreSparql = null;
 	}
 
 	@SuppressWarnings({ "unchecked", "unlikely-arg-type" })
@@ -130,11 +135,11 @@ public class MorphAnalysis {
 				/** Predicate의 종류 : 카페, 음식점 or 메뉴, 영업시간 */
 				predicate_spec = query.matchPredicate(predicate);
 				if (predicate_spec.equals("")) {
-					return respond.MakeJsonObject("매치되는 정보 분류가 없어요 ㅠㅠ");
+					return respond.MakeJsonObject_plaintext("매치되는 정보 분류가 없어요 ㅠㅠ");
 				}
 				logger.info("///////////매치되는 정보 존재");
 			} else {
-				return respond.MakeJsonObject("잘 이해하지 못했어요");
+				return respond.MakeJsonObject_plaintext("잘 이해하지 못했어요");
 
 			}
 
@@ -213,7 +218,7 @@ public class MorphAnalysis {
 				logger.info("NounList + " + conditionstoLine);
 				ArrayList<String> DependencyList = new ArrayList<String>(VANNGList.subList(0, cutLine));
 				if (DependencyList.isEmpty())
-					return respond.MakeJsonObject("다시 검색해 주세요");
+					return respond.MakeJsonObject_plaintext("다시 검색해 주세요");
 				/// dddddddddd
 				conditionstoLine = "";
 				for (String a : DependencyList) {
@@ -232,7 +237,7 @@ public class MorphAnalysis {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return respond.MakeJsonObject(Answer);
+		return respond.MakeJsonObject_plaintext(Answer);
 
 	}
 
@@ -287,6 +292,7 @@ public class MorphAnalysis {
 		searchtemplate += predicate;
 		logger.info("---------------ANSWERSUITABLESTORE----------------");
 		suitableStores = query.UnionConditionSparql(predicate, arr);
+		this.resultStoreSparql = query.getFirst_middle_sparql();
 		if (!suitableStores.isEmpty()) {
 			for (String s : suitableStores) {
 				logger.info("S!!!!!!!!!" + s);
@@ -298,22 +304,36 @@ public class MorphAnalysis {
 					location = s.split("\\|")[1];
 					locSearchUrl = geoloc(location);
 				}
-				String returntext = storeInfoAll(name);
-				return respond.MakeStoreRecommend(locSearchUrl, returntext,
-						"https://www.diningcode.com/isearch.php?query=" + name);
+
+				logger.info("NAME!!!!!!!!!" + name);
+				logger.info("loc!!!!!!!!!" + location);
+				return makeCard(name);
 			}
 		}
-		String c_result = Crawling(searchtemplate + predicate);
+
+		String c_result = Crawling(searchtemplate);
 		if (c_result.equals("")) {
-			return respond.MakeJsonObject("검색을 거쳤지만 만족하는 가게가 없었어요 :(");// CRAWLING fail!!
+			logger.info("만족하는 가게가 없다");
+			return respond.MakeJsonObject_plaintext("검색을 거쳤지만 만족하는 가게가 없었어요 :(");// CRAWLING fail!!
 		} else {
-			return respond.MakeStoreRecommend(geoloc(query.condition_list_only(c_result, "주소")), storeInfoAll(c_result),
-					"https://www.diningcode.com/isearch.php?query=" + c_result);
+			logger.info("카드 만드는중");
+			return makeCard(c_result);
 		}
 		/**
 		 * test String testline = ""; ArrayList<String> cResult = Crawling(); for(String
 		 * a : cResult) { testline += a; } return testline;
 		 */
+	}
+	
+	public String makeCard(String storename) throws UnsupportedEncodingException, ParseException {
+		String test = query.condition_list_only(storename, "주소");
+		logger.info("test : " + test);
+		String picUrl = geoloc(test);
+		String exp = "말씀하신 조건으로 탐색해보았습니다!\n"+ storeInfoAll(storename);
+		logger.info("picUrl : " + picUrl);
+		logger.info("exp : " + exp);
+		return respond.MakeStoreRecommend(picUrl, exp,
+				"https://www.diningcode.com/isearch.php?query=" + storename);
 	}
 
 	private String Answer(String subject, String predicate, String objective) {
@@ -334,7 +354,10 @@ public class MorphAnalysis {
 		Connection.Response response = Jsoup.connect("https://www.diningcode.com/isearch.php?query=" + input)
 				.method(Connection.Method.GET).execute();
 		Document url = response.parse();
-		Elements resultList = url.select("div#div_rn .list li");
+		Elements resultList = url.select("div#div_normal .list li");
+		if (resultList.size() == 0) {
+			resultList = url.select("div#div_rn .list li");
+		}
 		int crawlSize = Math.min(1, resultList.size());
 		logger.info("crawlsize : " + crawlSize);
 		for (int count = 0; count < crawlSize; count++) {
@@ -385,46 +408,64 @@ public class MorphAnalysis {
 			logger.info("TAGSTRING : " + tagString);
 			logger.info("MENU : " + menuString);
 			if (!query.storeExist(name)) {
-				String INSERT_TEMPLATE = "";
-				String INSERT_TEMPLATE_FIRST = "PREFIX stores: <http://13.209.53.196:3030/stores#> INSERT DATA {";
+				String INSERT_TEMPLATE_FIRST = "PREFIX store: <http://13.209.53.196:3030/stores#> INSERT DATA { ";
 				String INSERT_TEMPLATE_MIDDLE = "";
-				String INSERT_TEMPLATE_LAST = ".}";
+				String INSERT_TEMPLATE_LAST = "}";
 				String trimStore = name.replace(" ", "");
 
 				query.teachNewStore(trimStore);
 				String StoreSub = "<" + query.matchSubject(trimStore) + ">";
+				INSERT_TEMPLATE_MIDDLE += StoreSub + " store:음식점분류   store:음식점 . ";
 				if (!locat.equals("")) {
-					INSERT_TEMPLATE_MIDDLE += StoreSub + " store:주소 " + "\"" + locat + "\".";
+					INSERT_TEMPLATE_MIDDLE += StoreSub + " store:주소 " + "\"" + locat + "\". ";
 				}
 				if (!tel.equals("")) {
-					INSERT_TEMPLATE_MIDDLE += StoreSub + " store:전화번호 " + "\"" + tel + "\".";
+					INSERT_TEMPLATE_MIDDLE += StoreSub + " store:전화번호 " + "\"" + tel + "\". ";
 				}
 				if (!worktime.equals("")) {
-					INSERT_TEMPLATE_MIDDLE += StoreSub + " store:영업시간 " + "\"" + worktime + "\".";
+					INSERT_TEMPLATE_MIDDLE += StoreSub + " store:영업시간 " + "\"" + worktime + "\". ";
+				}
+				if (!menuString.equals("")) {
+					for (int i = 0; i < menuSplit.length - 1; i++) {
+						INSERT_TEMPLATE_MIDDLE += StoreSub + " store:메뉴 " + "\"" + menuSplit[i] + "\". ";
+					}
 				}
 				if (!tagString.equals("")) {
 					query.teachStoreInfo_TagCase(name, tagString);
 				}
-				if (!menuString.equals("")) {
-					for (int i = 1; i < menuSplit.length; i++) {
-						INSERT_TEMPLATE_MIDDLE += StoreSub + " store:메뉴 " + "\"" + menuSplit[i] + "\".";
-					}
-				}
-				INSERT_TEMPLATE = INSERT_TEMPLATE_FIRST + INSERT_TEMPLATE_MIDDLE + INSERT_TEMPLATE_LAST;
+				final String INSERT_TEMPLATE = INSERT_TEMPLATE_FIRST + INSERT_TEMPLATE_MIDDLE + INSERT_TEMPLATE_LAST;
 				logger.info("INSERT TEMPLATE : " + INSERT_TEMPLATE);
-				query.teachStoreInfo_withTemplate(INSERT_TEMPLATE);
+
+				String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-update", "--service",
+						"http://13.209.53.196:3030/stores", INSERT_TEMPLATE };
+				Process proc = null;
+				logger.info("UPDATE TEMPLATE LAST : ", INSERT_TEMPLATE);
+				try {
+					proc = Runtime.getRuntime().exec(args);
+					/** StringBuilder 사용하기 */
+					StringBuilder sb = new StringBuilder();
+					String line;
+					BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+					while ((line = reader.readLine()) != null) {
+						logger.info("update : " + line);
+						sb.append(line);
+					}
+				} catch (IOException e) {
+					logger.info(e.getMessage());
+				}
 			}
 		} catch (Exception e) {
 			logger.info(e.getMessage());
 			return "";
 		}
-		String check = storeInfoAll(name);
-		logger.info("CHECKKKKKKKKKKKKKKK : " + check);
 		return name;
 	}
 
 	public String geoloc(String loc) throws ParseException, UnsupportedEncodingException {
 		String lnglat = "";
+		if (loc.equals("")) {
+			return "";
+		}
 
 		InputStream inputStream = null;
 		loc = URLEncoder.encode(loc, "UTF-8");

@@ -30,6 +30,13 @@ import org.apache.http.impl.client.HttpClientBuilder;
 public class SparqlQuery {
 	private Logger logger = LoggerFactory.getLogger(SparqlQuery.class);
 	MakeResponse JsnRespond = new MakeResponse();
+	public String first_middle_sparql = "";
+	public String getFirst_middle_sparql() {
+		return first_middle_sparql;
+	}
+	public void setFirst_middle_sparql(String first_middle_sparql) {
+		this.first_middle_sparql = first_middle_sparql;
+	}
 
 	/**
 	 * @param newStore
@@ -136,27 +143,6 @@ public class SparqlQuery {
 		}
 	}
 	
-	public void teachStoreInfo_withTemplate(String template) {// objective is RAW!!
-		// TODO predicate 추가하기.
-		logger.info("teachStoreInfo_template");
-		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-update", "--service",
-				"http://13.209.53.196:3030/stores", template };
-		Process proc = null;
-
-		try {
-			proc = Runtime.getRuntime().exec(args);
-			/** StringBuilder 사용하기 */
-			StringBuilder sb = new StringBuilder();
-			String line;
-			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-			while ((line = reader.readLine()) != null) {
-				//logger.info("update : " + line);
-				sb.append(line);
-			}
-		} catch (IOException e) {
-			logger.info(e.getMessage());
-		}
-	}
 
 	// 추가 - 더 수정하기
 	public void teachStoreInfo_TagCase(String subject, String tagLine) {
@@ -552,6 +538,7 @@ public class SparqlQuery {
 
 	public ArrayList<String> UnionConditionSparql(String predicate, ArrayList<String> arr) {
 		logger.info("UnionConditionSparql");
+		this.first_middle_sparql = "";
 		String SEARCH_TEMPLATE = unionConditionTemplate(predicate, arr); // 동적으로 select하는 코드 만들기.
 		logger.info("SPARQL : " + SEARCH_TEMPLATE);
 		/**
@@ -602,8 +589,8 @@ public class SparqlQuery {
 		logger.info("unionConditionTemplate");
 		String typestore = Store_type_uri(storetype);
 		String storetype_query = "<" + typestore + ">";
-		if (storetype.equals("http://13.209.53.196:3030/stores#음식점")) {
-			storetype_query = "?type (?type = store:한식 ||?type = 음식 || ?type = store:양식 ||?type = store:카페 ||?type = store:일식 ||?type = store:술집 ||?type = store:중식)";
+		if (typestore.equals("http://13.209.53.196:3030/stores#음식점")) {
+			storetype_query = "?type FILTER(?type = store:한식 ||?type = store:음식점 || ?type = store:양식 ||?type = store:카페 ||?type = store:일식 ||?type = store:술집 ||?type = store:중식)";
 		}
 		String SEARCH_TEMPLATE_first = "PREFIX store: <http://13.209.53.196:3030/stores#> SELECT ?subject ?object ?loc WHERE {";
 		String SEARCH_TEMPLATE_storetype = " ?subject store:음식점분류  " + storetype_query + " . ";
@@ -615,6 +602,7 @@ public class SparqlQuery {
 					+ Integer.toString(temp_count) + " FILTER contains(?temp_o" + Integer.toString(temp_count) + ", \""
 					+ onecondition + "\") .";
 		}
+		this.first_middle_sparql = SEARCH_TEMPLATE_storetype + SEARCH_TEMPLATE_middle;
 		String SEARCH_TEMPLATE_last = "?subject <http://13.209.53.196:3030/stores#이름> ?object. "
 				+ " OPTIONAL { ?subject store:주소 ?loc .}}";
 		final String UPDATE_TEMPLATE = SEARCH_TEMPLATE_first + SEARCH_TEMPLATE_storetype + SEARCH_TEMPLATE_middle
@@ -686,7 +674,7 @@ public class SparqlQuery {
 		JSONArray jArray = (JSONArray) results.get("bindings");
 		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List
 		for (int i = 0; i < jArray.length(); i++) { // JSONArray 내 json 개수만큼 for문 동작
-			String temp = jArray.getJSONObject(0).getJSONObject("temp").getString("value");
+			String temp = jArray.getJSONObject(i).getJSONObject("temp").getString("value");
 			resultArr.add(temp);
 		}
 		String resultString = "";
@@ -733,9 +721,44 @@ public class SparqlQuery {
 		String resultString = "";
 		if (!resultArr.isEmpty()) {
 			for (String i : resultArr) {
-				return i;
+				resultString = i;
+				logger.info("RESULTSTRING : " + resultString);
+				return resultString;
 			}
 		}
 		return resultString;
+	}
+	public ArrayList<String> searchBySparqlTemplate(String sparql) {
+		logger.info("searchBySparqlTemplate");
+		
+		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
+				"http://13.209.53.196:3030/stores", sparql };
+		Process proc = null;
+		/** StringBuilder 사용하기 */
+		StringBuilder sb = new StringBuilder();
+		try {
+			proc = Runtime.getRuntime().exec(args);
+			String line;
+			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			while ((line = reader.readLine()) != null) {
+				// logger.info("query : " + line);
+				sb.append(line);
+			}
+		} catch (IOException e) {
+			logger.info(e.getMessage());
+		}
+		String sbToString = sb.toString();
+		JSONObject jsonObj = null;
+		jsonObj = new JSONObject(sbToString);
+		JSONObject results = (JSONObject) jsonObj.get("results");
+		JSONArray jArray = (JSONArray) results.get("bindings");
+		logger.info("RESULT ARR : " + jArray.toString());
+		ArrayList<String> resultArr = new ArrayList<String>(); // 지식베이스에서 일치하는 거 리턴한 List
+		for (int i = 0; i < jArray.length(); i++) { // JSONArray 내 json 개수만큼 for문 동작
+			String storename = jArray.getJSONObject(i).getJSONObject("object").getString("value");
+			resultArr.add(storename);
+			logger.info("searchBySparqlTemplate " + storename);
+		}
+		return resultArr;
 	}
 }

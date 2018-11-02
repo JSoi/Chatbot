@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -12,7 +14,8 @@ import com.google.gson.JsonArray;
 
 public class MakeResponse {
 	public String speechResponse;
-
+	private Logger logger = LoggerFactory.getLogger(Controller.class);
+	
 	public MakeResponse() {
 	}
 
@@ -33,10 +36,11 @@ public class MakeResponse {
 		keyboard.put("type", "buttons");
 		keyboard.put("buttons", buttonarr);
 		res.put("keyboard", keyboard);
+		logger.info("RES - ToString info : " + res.toString());
 		return res.toJSONString();
 	}
 
-	public String MakeJsonObject(String input) {
+	public String MakeJsonObject_plaintext(String input) {
 		JsonObject res = new JsonObject();
 		JsonObject text = new JsonObject();
 

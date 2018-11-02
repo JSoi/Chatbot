@@ -101,8 +101,10 @@ public class HomeController {
 		JSONParser parser = new JSONParser();
 		Object obj = parser.parse(object);
 		JSONObject parsingJson = (JSONObject)obj;
-
+		
+		logger.info("왜에러나지 JSON  -------------------------------- "+parsingJson.toString());
 		String getText = (String) parsingJson.get("content");
+		logger.info("왜에러나지  -------------------------------- "+getText);
 		String result;
 		
 	/*	JSONObject keyboard = new JSONObject();
@@ -117,7 +119,7 @@ public class HomeController {
 		logger.info(object);
 		logger.info("getText:"+getText);
 		MakeResponse r = new MakeResponse();
-		logger.info(r.MakeJsonObject(getText));
+		logger.info(r.MakeJsonObject_plaintext(getText));
 		result = MainControlling.flow(getText);	
 
 		logger.info(result);

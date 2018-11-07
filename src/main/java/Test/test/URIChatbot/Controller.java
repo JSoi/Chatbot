@@ -103,7 +103,7 @@ public class Controller {
 			return JsnRespond.MakeJsonObject_plaintext("알겠습니다! 어떤 메뉴를 찾으세요?");
 		}
 		if (condition_ask.getFLAG().equals("MENU")) {
-			condition_ask.addSparqlQuery("?subject store:메뉴 \""+ line + "\".");
+			condition_ask.addSparqlQuery("?subject store:메뉴 ?menu FILTER contains(?menu, \""+ line + "\").");
 			condition_ask.addSparqlQuery("?subject <http://13.209.53.196:3030/stores#이름> ?object. " + 
 					"  OPTIONAL { ?subject store:주소 ?loc .}}");
 			condition_ask.setFLAG("INFO");

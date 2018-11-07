@@ -31,9 +31,11 @@ public class SparqlQuery {
 	private Logger logger = LoggerFactory.getLogger(SparqlQuery.class);
 	MakeResponse JsnRespond = new MakeResponse();
 	public String first_middle_sparql = "";
+
 	public String getFirst_middle_sparql() {
 		return first_middle_sparql;
 	}
+
 	public void setFirst_middle_sparql(String first_middle_sparql) {
 		this.first_middle_sparql = first_middle_sparql;
 	}
@@ -142,7 +144,6 @@ public class SparqlQuery {
 			logger.info(e.getMessage());
 		}
 	}
-	
 
 	// 추가 - 더 수정하기
 	public void teachStoreInfo_TagCase(String subject, String tagLine) {
@@ -223,10 +224,11 @@ public class SparqlQuery {
 		logger.info("SearchDB_SP");
 		String ExactStore = "";
 		String ExactPre = "";
-		String returnString = "";
+		String objectResult = "";
 		ExactStore = matchSubject(subject);
 		// ExactPre = matchPredicate(predicate);
 		ExactPre = matchPredicate(predicate);
+		logger.info("==================== EXACTPRE : " + ExactPre + " =================");
 		final String SEARCH_OBJ_TEMPLATE = "SELECT ?object " + "WHERE { <" + ExactStore + "> " + ExactPre
 				+ "  ?object . " + "} ";
 		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
@@ -255,7 +257,18 @@ public class SparqlQuery {
 		// logger.info("SearchDB_SP &jArray : " + jArray.toString());
 		if (jArray.length() == 0)
 			return "";
-		String objectResult = jArray.getJSONObject(0).getJSONObject("object").getString("value");
+		if (ExactPre.contains("stores#메뉴")) {
+			for (int count = 0; count < jArray.length(); count++) {
+				objectResult += jArray.getJSONObject(count).getJSONObject("object").getString("value") + ",";
+			}
+			objectResult = objectResult.substring(0, objectResult.length()-1);
+		} else if (ExactPre.contains("stores#태그")) {
+			for (int count = 0; count < jArray.length(); count++) {
+				objectResult += "#" + jArray.getJSONObject(count).getJSONObject("object").getString("value");
+			}
+		} else {
+			objectResult = jArray.getJSONObject(jArray.length() - 1).getJSONObject("object").getString("value");
+		}
 		// logger.info("SearchDB_SP & objectResult : " + objectResult);
 		return objectResult;
 
@@ -728,9 +741,10 @@ public class SparqlQuery {
 		}
 		return resultString;
 	}
+
 	public ArrayList<String> searchBySparqlTemplate(String sparql) {
 		logger.info("searchBySparqlTemplate");
-		
+
 		String[] args = new String[] { "/home/ubuntu/apache-jena-fuseki-3.7.0/bin/s-query", "--service",
 				"http://13.209.53.196:3030/stores", sparql };
 		Process proc = null;
